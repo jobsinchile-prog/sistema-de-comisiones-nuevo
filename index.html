@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#f7c600">
+  <meta name="description" content="Sistema de comisiones offline para vendedores">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Comisiones">
+  <title>Sistema de Comisiones</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Pantalla Principal (siempre visible al inicio) -->
+  <div id="mainScreen">
+    <div id="installPrompt" class="install-prompt">
+      <div class="install-prompt-text">
+        📱 Instala esta app en tu celular para usarla offline
+      </div>
+      <button class="btn" onclick="installApp()">Instalar</button>
+    </div>
+
+    <div class="header">
+      <h2>Neumáticos y Llantas del Pacífico</h2>
+      <p>Sistema de Comisiones</p>
+    </div>
+
+    <!-- 1. RESUMEN DE VENTAS -->
+    <div class="section-title">📊 Resumen de Ventas</div>
+    <div class="totals-grid">
+      <div class="total-cell">
+        <div class="total-label">Total Día (con IVA)</div>
+        <div class="total-value" id="dayWithVat">$ 0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Total Día (sin IVA)</div>
+        <div class="total-value" id="dayWithoutVat">$ 0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Comisión Día</div>
+        <div class="total-value" id="dayCommission">$ 0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Total Mes (con IVA)</div>
+        <div class="total-value" id="monthWithVat">$ 0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Total Mes (sin IVA)</div>
+        <div class="total-value" id="monthWithoutVat">$ 0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Comisión Mes</div>
+        <div class="total-value" id="monthCommission">$ 0</div>
+      </div>
+    </div>
+
+    <!-- 2. AGREGAR VENTA -->
+    <div class="section-title">➕ Agregar Venta</div>
+    <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+      Introduce el <strong>monto TOTAL con IVA</strong> (ejemplo: 119000):
+    </p>
+    <div class="input-group">
+      <input type="text" id="amountInput" placeholder="119000" inputmode="numeric">
+      <button class="btn btn-accent" onclick="addSale()">Agregar</button>
+    </div>
+    
+    <button class="btn btn-danger" onclick="deleteLastSale()" style="width: 100%; margin-top: 8px; margin-bottom: 24px;">
+      🗑️ Eliminar Última Venta
+    </button>
+
+    <!-- 3. ACCIONES - REORDENADO EN 3 FILAS Y 2 COLUMNAS (SE ELIMINÓ LA FILA DE TRABAJOS) -->
+    <div class="section-title">⚙️ Acciones</div>
+    <div class="actions-grid">
+      <!-- Fila 1 -->
+      <button class="btn btn-danger" onclick="showCloseDayModal()">Cerrar Día</button>
+      <button class="btn btn-danger" onclick="showCloseMonthModal()">Cerrar Mes</button>
+      
+      <!-- Fila 2 -->
+      <button class="btn btn-accent" onclick="showAnalysisScreen()">Análisis de Ventas</button>
+      <button class="btn btn-accent" onclick="showModifyModal()">Modificar Ventas</button>
+      
+      <!-- Fila 3 -->
+      <button class="btn btn-info" onclick="showCRMScreen()">Gestión de Clientes</button>
+      <button class="btn btn-secondary" onclick="showExportModal()">Exportar Ventas</button>
+      
+      <!-- Fila 4 -->
+      <button class="btn btn-info" onclick="showUploadModal()">Subir Archivos Ventas</button>
+    </div>
+
+    <!-- 4. GRÁFICOS -->
+    <div class="section-title">📊 Gráficos</div>
+    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Diarias (Mes Actual)</h3>
+      <canvas id="dailyChart" style="max-height: 250px;"></canvas>
+    </div>
+    
+    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Mensuales (Histórico)</h3>
+      <canvas id="monthlyChart" style="max-height: 250px;"></canvas>
+    </div>
+
+    <!-- 5. VENTAS DEL DÍA (4 registros visibles) -->
+    <div class="section-title">📅 Ventas del Día</div>
+    <div class="sales-list" id="salesDay"></div>
+
+    <!-- 6. VENTAS DEL MES (4 registros visibles) -->
+    <div class="section-title">📆 Ventas del Mes</div>
+    <div class="sales-list" id="salesMonth"></div>
+
+    <!-- 7. RESETEAR SISTEMA -->
+    <div class="section-title">🔄 Resetear Sistema</div>
+    <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
+      ⚠️ <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos guardados.
+    </p>
+    <button class="btn btn-danger" onclick="showResetModal()">Resetear Todo</button>
+  </div>
+
+  <!-- ==================== PANTALLA DE ANÁLISIS ==================== -->
+  <div id="analysisScreen" class="analysis-screen">
+    <div class="header">
+      <h2>Análisis de Ventas</h2>
+      <p>KPI Básicos - Resumen Ejecutivo</p>
+    </div>
+
+    <div class="section-title">📊 KPI Diarios</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-period">DÍA</div>
+        <div class="kpi-title">Ventas Totales (sin IVA)</div>
+        <div class="kpi-value" id="kpiDayTotal">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">DÍA</div>
+        <div class="kpi-title">Cantidad de Ventas</div>
+        <div class="kpi-value" id="kpiDayCount">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">DÍA</div>
+        <div class="kpi-title">Ticket Promedio</div>
+        <div class="kpi-value" id="kpiDayAverage">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">DÍA</div>
+        <div class="kpi-title">Comisión Vendedor</div>
+        <div class="kpi-value" id="kpiDayCommission">$ 0</div>
+      </div>
+    </div>
+
+    <div class="section-title">📊 KPI Semanales</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-period">SEMANA</div>
+        <div class="kpi-title">Ventas Totales (sin IVA)</div>
+        <div class="kpi-value" id="kpiWeekTotal">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">SEMANA</div>
+        <div class="kpi-title">Cantidad de Ventas</div>
+        <div class="kpi-value" id="kpiWeekCount">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">SEMANA</div>
+        <div class="kpi-title">Ticket Promedio</div>
+        <div class="kpi-value" id="kpiWeekAverage">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">SEMANA</div>
+        <div class="kpi-title">Comisión Vendedor</div>
+        <div class="kpi-value" id="kpiWeekCommission">$ 0</div>
+      </div>
+    </div>
+
+    <div class="section-title">📊 KPI Mensuales</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-period">MES</div>
+        <div class="kpi-title">Ventas Totales (sin IVA)</div>
+        <div class="kpi-value" id="kpiMonthTotal">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">MES</div>
+        <div class="kpi-title">Cantidad de Ventas</div>
+        <div class="kpi-value" id="kpiMonthCount">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">MES</div>
+        <div class="kpi-title">Ticket Promedio</div>
+        <div class="kpi-value" id="kpiMonthAverage">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">MES</div>
+        <div class="kpi-title">Comisión Vendedor</div>
+        <div class="kpi-value" id="kpiMonthCommission">$ 0</div>
+      </div>
+    </div>
+
+    <div class="section-title">🕒 Ventas por Hora</div>
+    <div class="hourly-chart-container">
+      <canvas id="hourlyChart" style="max-height: 200px;"></canvas>
+    </div>
+
+    <div style="margin: 24px 0;">
+      <button class="btn btn-accent" onclick="showMainScreen()" style="width: 100%;">
+        ← Volver a la pantalla principal
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== PANTALLA DE CRM ==================== -->
+  <div id="crmScreen" class="analysis-screen">
+    <div class="header">
+      <h2>CRM - Gestión de Prospectos</h2>
+      <p>Base de clientes y seguimiento comercial</p>
+    </div>
+
+    <button class="btn btn-accent" onclick="showMainScreen()" style="width: 100%; margin-bottom: 20px;">
+      ← Volver a la pantalla principal
+    </button>
+
+    <!-- CONFIGURACIÓN DEL VENDEDOR -->
+    <div class="vendedor-config">
+      <h3>Configuración de Mensajes</h3>
+      <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+        En los mensajes a clientes ¿Cómo quieres que aparezca tu nombre?
+      </p>
+      <div class="vendedor-input-group">
+        <input type="text" id="vendedorNombre" placeholder="Ej: Carlos, María, Juan Pérez">
+        <button onclick="guardarNombreVendedor()">Guardar</button>
+      </div>
+      <div class="vendedor-current">
+        <strong>Nombre actual:</strong> <span id="nombreVendedorActual">No configurado</span>
+      </div>
+    </div>
+
+    <!-- ACCIONES RÁPIDAS -->
+    <div class="section-title">⚡ Acciones Rápidas</div>
+    <div class="actions-grid">
+      <button class="btn btn-accent" onclick="showAddProspectModal()">➕ Agregar Prospecto</button>
+      <button class="btn btn-info" onclick="showImportClientModal()">📁 Importar Base</button>
+      <button class="btn btn-secondary" onclick="exportProspects()">📥 Exportar Excel</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="section-title">🔍 Filtros y Búsqueda</div>
+    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+        <input type="text" id="searchProspect" placeholder="Buscar por nombre o teléfono..." 
+               style="flex: 1; min-width: 200px; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px;"
+               oninput="filterProspects()">
+        <select id="filterStatus" style="min-width: 150px;" onchange="filterProspects()">
+          <option value="">Todos los estados</option>
+          <option value="Falta contactar">Falta contactar</option>
+          <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
+          <option value="Contactado por llamada">Contactado por llamada</option>
+          <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
+        </select>
+        <select id="filterProduct" style="min-width: 150px;" onchange="filterProspects()">
+          <option value="">Todos los productos</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" onclick="resetFilters()" style="width: 100%;">
+        🔄 Limpiar Filtros
+      </button>
+    </div>
+
+    <!-- LISTADO DE PROSPECTOS -->
+    <div class="section-title">👥 Listado de Prospectos</div>
+    <div class="sales-list" id="prospectList" style="height: 300px;">
+      <!-- Prospectos se cargarán aquí -->
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="section-title">📊 Estadísticas</div>
+    <div class="totals-grid">
+      <div class="total-cell">
+        <div class="total-label">Total Prospectos</div>
+        <div class="total-value" id="totalProspects">0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Falta Contactar</div>
+        <div class="total-value" id="pendingProspects">0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Contactados</div>
+        <div class="total-value" id="contactedProspects">0</div>
+      </div>
+      <div class="total-cell">
+        <div class="total-label">Últimos 7 días</div>
+        <div class="total-value" id="recentProspects">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL SUBIR ARCHIVO ==================== -->
+  <div id="uploadModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-title">📁 Subir Archivo CSV</div>
+      
+      <div style="margin: 16px 0;">
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+          Sube un archivo CSV con el siguiente formato:<br>
+          <strong>Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes</strong>
+        </p>
+        
+        <div class="file-upload-container">
+          <div class="file-input-wrapper">
+            <button class="file-input-button">📂 Seleccionar archivo CSV</button>
+            <input type="file" id="csvFile" accept=".csv,text/csv" onchange="handleFileSelect(event)">
+          </div>
+          <div id="fileName" class="file-name">No se ha seleccionado ningún archivo</div>
+        </div>
+        
+        <div id="filePreview" class="upload-preview" style="display: none;">
+          <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 5 filas):</h4>
+          <table id="previewTable">
+            <thead>
+              <tr>
+                <th>Fecha/Hora</th>
+                <th>Monto IVA</th>
+                <th>Neto</th>
+                <th>Comisión</th>
+                <th>Fecha</th>
+                <th>Mes</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody">
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="uploadStats" style="margin-top: 12px; display: none;">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen:</div>
+          <div style="font-size: 12px; color: var(--muted);">
+            • Total de registros: <span id="totalRecords">0</span><br>
+            • Registros nuevos: <span id="newRecords">0</span><br>
+            • Total a importar: <span id="importRecords">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="processCSVFile()" id="processBtn" disabled>
+          📥 Procesar Archivo
+        </button>
+        <button class="btn btn-secondary" onclick="hideModal('uploadModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL AGREGAR PROSPECTO - MODIFICADO CON ETIQUETAS ==================== -->
+  <div id="addProspectModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-title">➕ Agregar Nuevo Prospecto</div>
+      
+      <div style="margin: 16px 0;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Nombre y Apellido:</label>
+        <input type="text" id="prospectName" placeholder="Ej: Juan Pérez" 
+               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Teléfono:</label>
+        <input type="text" id="prospectPhone" placeholder="Ej: 947501990 (sin +56)" inputmode="tel"
+               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Producto(s):</label>
+        <input type="text" id="prospectProduct" placeholder="Ej: Neumáticos 185/65R15"
+               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Estado:</label>
+        <select id="prospectStatus" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
+          <option value="Falta contactar">Falta contactar</option>
+          <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
+          <option value="Contactado por llamada">Contactado por llamada</option>
+          <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
+        </select>
+        
+        <!-- NUEVAS ETIQUETAS RÁPIDAS -->
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Etiquetas importantes:</label>
+        <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="prospectTagTrabajo" value="TRABAJO EN CURSO">
+            <span class="tag" style="background: #3b82f6; color: white;">🔧 TRABAJO EN CURSO</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <input type="checkbox" id="prospectTagCotizacion" value="COTIZACIÓN">
+            <span class="tag" style="background: #10b981; color: white;">💰 COTIZACIÓN</span>
+          </label>
+        </div>
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Observación inicial (opcional):</label>
+        <textarea id="prospectObservation" placeholder="Notas importantes..." rows="3"
+                  style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;"></textarea>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="saveProspect()">💾 Guardar Prospecto</button>
+        <button class="btn btn-secondary" onclick="hideModal('addProspectModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL IMPORTAR CLIENTES ==================== -->
+  <div id="importClientModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-title">📁 Importar Base de Clientes</div>
+      
+      <div style="margin: 16px 0;">
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+          Sube un archivo Excel (.xlsx) o CSV (.csv) con la siguiente estructura:<br>
+          <strong>NombreApellido, Telefono, Producto, Estado, ObservacionInicial, ProximoContacto, Etiqueta</strong><br>
+          <em>Estado debe ser "Falta contactar" o "Contactado". ProximoContacto en formato DD/MM/AAAA.</em>
+        </p>
+        
+        <div class="file-upload-container">
+          <div class="file-input-wrapper">
+            <button class="file-input-button">📂 Seleccionar archivo Excel/CSV</button>
+            <input type="file" id="clientFile" accept=".csv,.xlsx,.xls,.text/csv" onchange="handleClientFileSelect(event)">
+          </div>
+          <div id="clientFileName" class="file-name">No se ha seleccionado ningún archivo</div>
+        </div>
+        
+        <div id="clientFilePreview" class="upload-preview" style="display: none; max-height: 300px;">
+          <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 10 filas):</h4>
+          <table id="clientPreviewTable">
+            <thead>
+              <tr>
+                <th>NombreApellido</th>
+                <th>Telefono</th>
+                <th>Producto</th>
+                <th>Estado</th>
+                <th>ObservacionInicial</th>
+                <th>ProximoContacto</th>
+                <th>Etiqueta</th>
+              </tr>
+            </thead>
+            <tbody id="clientPreviewBody">
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="clientUploadStats" style="margin-top: 12px; display: none;">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen de importación:</div>
+          <div style="font-size: 12px; color: var(--muted);">
+            • Total de registros: <span id="clientTotalRecords">0</span><br>
+            • Válidos para importar: <span id="clientValidRecords">0</span><br>
+            • Duplicados (mismo teléfono): <span id="clientDuplicateRecords">0</span><br>
+            • Ignorados (datos faltantes): <span id="clientIgnoredRecords">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="processClientFile()" id="processClientBtn" disabled>
+          📥 Confirmar Importación
+        </button>
+        <button class="btn btn-secondary" onclick="hideModal('importClientModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL DETALLE PROSPECTO ==================== -->
+  <div id="prospectDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-title" id="detailProspectName"></div>
+      
+      <div style="margin: 16px 0;">
+        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <!-- SECCIÓN MODIFICADA: AHORA CON BOTÓN DE WHATSAPP -->
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--accent); margin-right: 8px;">📞 Teléfono:</div>
+            <div id="detailProspectPhone" style="flex: 1;"></div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-accent" onclick="callProspect()" style="padding: 6px 12px; font-size: 12px;">
+                📞 Llamar
+              </button>
+              <button class="btn btn-whatsapp" onclick="openWhatsApp()" style="padding: 6px 12px; font-size: 12px;">
+                💬 WhatsApp
+              </button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--accent);">📦 Producto(s):</div>
+            <div id="detailProspectProduct"></div>
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--accent);">📊 Estado:</div>
+            <select id="detailProspectStatus" style="width: 100%; margin-top: 4px;">
+              <option value="Falta contactar">Falta contactar</option>
+              <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
+              <option value="Contactado por llamada">Contactado por llamada</option>
+              <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
+            </select>
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--accent);">📅 Próximo contacto:</div>
+            <input type="date" id="detailProspectNextContact" style="width: 100%; margin-top: 4px;">
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--accent);">🏷️ Etiquetas rápidas:</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+              <span class="tag" data-tag="Frío">❄️ Frío</span>
+              <span class="tag" data-tag="Tibio">🌤️ Tibio</span>
+              <span class="tag" data-tag="Caliente">🔥 Caliente</span>
+              <span class="tag" data-tag="COTIZACIÓN">💰 Cotización</span>
+              <span class="tag" data-tag="Agenda visita">📅 Visita</span>
+              <span class="tag" data-tag="TRABAJO EN CURSO">🔧 EN TRABAJO</span>
+            </div>
+            <div id="detailProspectTags" style="margin-top: 8px;"></div>
+          </div>
+        </div>
+        
+        <div style="background: var(--card); border-radius: 8px; padding: 12px;">
+          <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">📝 Historial de Observaciones:</div>
+          <div id="detailProspectObservations" style="max-height: 200px; overflow-y: auto;">
+            <!-- Observaciones se cargarán aquí -->
+          </div>
+          
+          <div style="margin-top: 12px;">
+            <textarea id="newObservation" placeholder="Agregar nueva observación..." rows="2"
+                      style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 8px;"></textarea>
+            <button class="btn btn-accent" onclick="addObservation()" style="width: 100%; padding: 8px;">
+              ➕ Agregar Observación
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="saveProspectChanges()">💾 Guardar Cambios</button>
+        <button class="btn btn-danger" onclick="confirmDeleteProspect()">🗑️ Eliminar</button>
+        <button class="btn btn-secondary" onclick="hideModal('prospectDetailModal')">✗ Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <div id="closeDayModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">¿Confirmar cierre de día?</div>
+      <p style="color: var(--muted); margin-bottom: 16px;">Se vaciarán las ventas del día actual.</p>
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="confirmCloseDay()">✓ Confirmar</button>
+        <button class="btn btn-secondary" onclick="hideModal('closeDayModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="closeMonthModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">¿Confirmar cierre de mes?</div>
+      <p style="color: var(--muted); margin-bottom: 16px;">Se vaciarán las ventas del día y del mes actual.</p>
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="confirmCloseMonth()">✓ Confirmar</button>
+        <button class="btn btn-secondary" onclick="hideModal('closeMonthModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">⚠️ ¿CONFIRMAR RESETEO COMPLETO?</div>
+      <p style="color: var(--muted); margin-bottom: 16px;">Se borrarán TODOS los datos.</p>
+      <div class="modal-buttons">
+        <button class="btn btn-danger" onclick="confirmReset()">✓ SÍ, BORRAR TODO</button>
+        <button class="btn btn-secondary" onclick="hideModal('resetModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="exportModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">📊 Exportar a Excel</div>
+      
+      <div style="margin: 16px 0;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Tipo de reporte:</label>
+        <select id="exportType" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+          <option value="day">Ventas del Día</option>
+          <option value="month">Ventas del Mes</option>
+          <option value="permanent">Historial Permanente</option>
+        </select>
+      </div>
+
+      <div id="dateSelector" style="margin: 16px 0; display: none;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar:</label>
+        <select id="dateSelect" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+        </select>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="confirmExport()">📥 Exportar</button>
+        <button class="btn btn-secondary" onclick="hideModal('exportModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modifyModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-title">✏️ Modificar Ventas</div>
+      
+      <div style="margin: 16px 0;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Acción:</label>
+        <select id="modifyAction" onchange="updateModifyAction()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+          <option value="add">➕ Agregar Venta</option>
+          <option value="delete">🗑️ Eliminar Venta</option>
+          <option value="search">🔍 Buscar en Historial</option>
+        </select>
+      </div>
+
+      <div id="addSaleSection" style="margin: 16px 0;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Fecha de la venta:</label>
+        <div class="date-input-wrapper">
+          <input type="date" id="saleDate" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
+        </div>
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Monto con IVA:</label>
+        <input type="text" id="saleAmount" placeholder="119000" inputmode="numeric" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
+      </div>
+
+      <div id="deleteSaleSection" style="margin: 16px 0; display: none;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Período:</label>
+        <select id="deletePeriod" onchange="updateDeleteList()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
+          <option value="day">Ventas del Día</option>
+          <option value="month">Ventas del Mes</option>
+          <option value="permanent">Historial Permanente</option>
+        </select>
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar venta a eliminar:</label>
+        <div id="salesListToDelete" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
+        </div>
+      </div>
+
+      <div id="searchSaleSection" style="margin: 16px 0; display: none;">
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Buscar en Historial Permanente:</label>
+        <input type="text" id="searchQuery" placeholder="Buscar por mes (ej: 2024-12) o monto..." style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
+        
+        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Resultados:</label>
+        <div id="searchResults" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
+          <div style="padding: 12px; color: var(--muted); text-align: center;">Ingrese un término de búsqueda</div>
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="confirmModify()">✓ Confirmar</button>
+        <button class="btn btn-secondary" onclick="hideModal('modifyModal')">✗ Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
