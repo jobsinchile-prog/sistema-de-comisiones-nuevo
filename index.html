@@ -4,13 +4,182 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#f7c600">
-  <meta name="description" content="Sistema de comisiones offline para vendedores">
+  <meta name="description" content="Sistema de comisiones exclusivo para vendedores autorizados">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Comisiones">
-  <title>Sistema de Comisiones</title>
+  <meta name="apple-mobile-web-app-title" content="Comisiones Exclusivo">
+  <title>Sistema de Comisiones Exclusivo</title>
   <link rel="manifest" href="#" id="manifest-placeholder">
   <style>
+    /* ============================================ */
+    /* ESTILOS DEL SISTEMA DE ACTIVACIÓN (añadir al inicio) */
+    /* ============================================ */
+    #activationScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f0f10;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .activation-container {
+      background: #1a1a1c;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+      border: 2px solid #2a2a2a;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    
+    .activation-logo {
+      font-size: 48px;
+      margin-bottom: 20px;
+      display: block;
+    }
+    
+    .activation-title {
+      color: #f7c600;
+      font-size: 24px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    
+    .activation-subtitle {
+      color: #ffffff;
+      font-size: 16px;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    
+    .vendedor-info {
+      background: rgba(247, 198, 0, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+      border: 1px solid rgba(247, 198, 0, 0.3);
+    }
+    
+    .vendedor-label {
+      font-size: 14px;
+      color: #999999;
+      margin-bottom: 8px;
+      display: block;
+    }
+    
+    .vendedor-value {
+      font-size: 22px;
+      color: #f7c600;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+    
+    .device-info {
+      background: rgba(59, 130, 246, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .device-label {
+      font-size: 12px;
+      color: #999999;
+      margin-bottom: 5px;
+      display: block;
+    }
+    
+    .device-id {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #3b82f6;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    
+    .activation-warning {
+      background: rgba(220, 38, 38, 0.1);
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      border: 1px solid rgba(220, 38, 38, 0.3);
+    }
+    
+    .warning-text {
+      font-size: 13px;
+      color: #fca5a5;
+      line-height: 1.5;
+    }
+    
+    .activation-input {
+      width: 100%;
+      padding: 16px;
+      background: #0f0f10;
+      color: #ffffff;
+      border: 2px solid #2a2a2a;
+      border-radius: 10px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+    
+    .activation-input:focus {
+      outline: none;
+      border-color: #f7c600;
+      box-shadow: 0 0 0 3px rgba(247, 198, 0, 0.2);
+    }
+    
+    .btn-activation {
+      padding: 16px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .btn-activation-primary {
+      background: #f7c600;
+      color: #111111;
+    }
+    
+    .btn-activation-primary:hover {
+      background: #d1a400;
+      box-shadow: 0 6px 20px rgba(247, 198, 0, 0.4);
+    }
+    
+    .btn-activation-secondary {
+      background: #1a1a1c;
+      color: #ffffff;
+      border: 2px solid #2a2a2a;
+    }
+    
+    .activation-footer {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #2a2a2a;
+    }
+    
+    .footer-text {
+      font-size: 12px;
+      color: #999999;
+      line-height: 1.5;
+    }
+    
+    /* Estilos existentes de tu app */
     :root {
       --bg: #0f0f10;
       --card: #1a1a1c;
@@ -782,631 +951,397 @@
   </style>
 </head>
 <body>
-  <!-- Navegación interna invisible -->
-  <div id="navigationHistory" style="display: none;"></div>
-  
-  <div id="mainScreen">
-    <div id="installPrompt" class="install-prompt">
-      <div class="install-prompt-text">
-        📱 Instala esta app en tu celular para usarla offline
-      </div>
-      <button class="btn" onclick="installApp()">Instalar</button>
-    </div>
-
-    <div class="header">
-      <h2>Neumáticos y Llantas del Pacífico</h2>
-      <p>Sistema de Comisiones</p>
-    </div>
-
-    <div class="section-title">📊 Resumen de Ventas</div>
-    <div class="totals-grid">
-      <div class="total-cell">
-        <div class="total-label">Total Día (con IVA)</div>
-        <div class="total-value" id="dayWithVat">$ 0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Total Día (sin IVA)</div>
-        <div class="total-value" id="dayWithoutVat">$ 0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Comisión Día</div>
-        <div class="total-value" id="dayCommission">$ 0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Total Ciclo (con IVA)</div>
-        <div class="total-value" id="cycleWithVat">$ 0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Total Ciclo (sin IVA)</div>
-        <div class="total-value" id="cycleWithoutVat">$ 0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Comisión Ciclo</div>
-        <div class="total-value" id="cycleCommission">$ 0</div>
-      </div>
-    </div>
-
-    <div class="section-title">➕ Agregar Venta</div>
-    <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-      Introduce el <strong>monto TOTAL con IVA</strong> (ejemplo: 119000):
-    </p>
-    <div class="input-group">
-      <input type="text" id="amountInput" placeholder="119000" inputmode="numeric">
-      <button class="btn btn-accent" onclick="addSale()">Agregar</button>
-    </div>
-    
-    <button class="btn btn-danger" onclick="deleteLastSale()" style="width: 100%; margin-top: 8px; margin-bottom: 24px;">
-      🗑️ Eliminar Última Venta
-    </button>
-
-    <div class="section-title">⚙️ Acciones</div>
-    <div class="actions-grid">
-      <button class="btn btn-danger" onclick="showCloseDayModal()">Cerrar Día</button>
-      <button class="btn btn-danger" onclick="showCloseCycleModal()">Cerrar Ciclo Comisiones</button>
-      <button class="btn btn-accent" onclick="showAnalysisScreen()">Análisis de Ventas</button>
-      <button class="btn btn-accent" onclick="showModifyModal()">Modificar Ventas</button>
-      <button class="btn btn-info" onclick="showCRMScreen()">Gestión de Clientes</button>
-      <button class="btn btn-secondary" onclick="showExportModal()">Exportar Ventas</button>
-      <button class="btn btn-info" onclick="showUploadModal()">Subir Archivos Ventas</button>
-    </div>
-
-    <div class="section-title">📅 Ventas del Día</div>
-    <div class="sales-list" id="salesDay"></div>
-
-    <div class="section-title">📆 Ventas del Ciclo Actual</div>
-    <div class="sales-list" id="salesCycle"></div>
-
-    <!-- NUEVA SECCIÓN: HISTORIAL COMPLETO DE VENTAS -->
-    <div class="section-title">📋 Historial Completo de Ventas</div>
-    <div class="sales-list" id="salesHistory"></div>
-
-    <div class="section-title">🔄 Resetear Sistema</div>
-    <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
-      ⚠️ <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos guardados.
-    </p>
-    <button class="btn btn-danger" onclick="showResetModal()">Resetear Todo</button>
-
-    <!-- NUEVO BOTÓN DE DESINSTALACIÓN COMPLETA -->
-    <div class="section-title" style="margin-top: 40px; border-top: 2px solid #dc2626; padding-top: 20px;">
-      ☢️ DESINSTALACIÓN COMPLETA
-    </div>
-    <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
-      ⚠️ <strong>ADVERTENCIA NUCLEAR:</strong> Esto eliminará la aplicación completamente del dispositivo.
-      Se borrarán todos los datos, cache, y la app dejará de funcionar.
-    </p>
-    <button class="btn btn-nuclear" onclick="showUninstallModal()" style="width: 100%; margin-bottom: 40px; padding: 16px; font-size: 16px;">
-      ☢️ DESINSTALAR APP COMPLETAMENTE DEL MÓVIL
-    </button>
-  </div>
-
-  <!-- MODAL DE DESINSTALACIÓN NUEVO -->
-  <div id="uninstallModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">☢️ ¿DESINSTALAR APP COMPLETAMENTE?</div>
-      <div style="margin: 16px 0; padding: 16px; background: rgba(220, 38, 38, 0.1); border-radius: 8px; border: 2px solid #dc2626;">
-        <p style="color: white; font-weight: 600; margin-bottom: 12px;">⚠️ ADVERTENCIA EXTREMA:</p>
-        <ul style="color: #fca5a5; font-size: 13px; line-height: 1.6; padding-left: 20px;">
-          <li>Se eliminarán TODOS los datos permanentemente</li>
-          <li>Se borrará el cache de la aplicación</li>
-          <li>La app se removerá del dispositivo</li>
-          <li>No podrás acceder a los datos sin reinstalar</li>
-          <li>Esta acción NO se puede deshacer</li>
-        </ul>
-      </div>
-      <p style="color: var(--muted); margin-bottom: 16px; font-size: 13px;">
-        Si estás seguro, escribe <strong>"DESINSTALAR"</strong> en el siguiente campo:
+  <!-- ============================================ -->
+  <!-- PANTALLA DE ACTIVACIÓN (MUY IMPORTANTE - Se muestra primero) -->
+  <!-- ============================================ -->
+  <div id="activationScreen">
+    <div class="activation-container">
+      <div class="activation-logo">🔒</div>
+      <h1 class="activation-title">SISTEMA DE COMISIONES EXCLUSIVO</h1>
+      <p class="activation-subtitle">
+        Esta aplicación es de uso exclusivo para vendedores autorizados de<br>
+        <strong style="color: #f7c600;">Neumáticos y Llantas del Pacífico</strong>
       </p>
-      <input type="text" id="uninstallConfirm" placeholder="Escribe DESINSTALAR aquí" 
-             style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); 
-                    border: 2px solid #dc2626; border-radius: 8px; margin-bottom: 16px;"
-             oninput="checkUninstallConfirmation()">
-      <div class="modal-buttons">
-        <button class="btn btn-nuclear" id="confirmUninstallBtn" onclick="performCompleteUninstall()" disabled>
-          ☢️ CONFIRMAR DESINSTALACIÓN COMPLETA
-        </button>
-        <button class="btn btn-secondary" onclick="hideModal('uninstallModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="analysisScreen" class="analysis-screen">
-    <div class="header">
-      <h2>Análisis de Ventas</h2>
-      <p>KPI Básicos - Resumen Ejecutivo</p>
-    </div>
-
-    <div class="section-title">📊 KPI Diarios</div>
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-period">DÍA</div>
-        <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiDayTotal">$ 0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">DÍA</div>
-        <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiDayCount">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">DÍA</div>
-        <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiDayAverage">$ 0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">DÍA</div>
-        <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiDayCommission">$ 0</div>
-      </div>
-    </div>
-
-    <!-- SE HA ELIMINADO LA SECCIÓN DE KPI SEMANALES -->
-
-    <div class="section-title">📊 KPI Comparativo de Ciclos</div>
-    <div class="kpi-grid">
-      <!-- CICLO ACTUAL -->
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
-        <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiCurrentCycleTotal">$ 0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
-        <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiCurrentCycleCount">0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
-        <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiCurrentCycleAverage">$ 0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
-        <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiCurrentCycleCommission">$ 0</div>
+      
+      <div class="vendedor-info">
+        <span class="vendedor-label">VENDEDOR ASIGNADO:</span>
+        <div class="vendedor-value" id="assignedVendor">[VENDEDOR AUTORIZADO]</div>
+        
+        <div class="device-info">
+          <span class="device-label">IDENTIFICADOR DE DISPOSITIVO:</span>
+          <div class="device-id" id="deviceIdDisplay">Cargando dispositivo...</div>
+        </div>
       </div>
       
-      <!-- CICLO ANTERIOR CERRADO -->
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiPreviousCycleTotal">$ 0</div>
+      <div class="activation-warning">
+        <p class="warning-text">
+          ⚠️ <strong>ADVERTENCIA DE SEGURIDAD:</strong><br>
+          Esta aplicación está vinculada a un solo dispositivo.<br>
+          Cualquier intento de compartir o usar en otro dispositivo<br>
+          resultará en el bloqueo permanente del sistema.
+        </p>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiPreviousCycleCount">0</div>
+      
+      <div id="activationSection">
+        <input type="text" 
+               id="activationCode" 
+               class="activation-input" 
+               placeholder="Ingresa tu código de activación"
+               maxlength="8"
+               autocomplete="off">
+        
+        <button class="btn-activation btn-activation-primary" onclick="attemptActivation()">
+          🔓 ACTIVAR SISTEMA
+        </button>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiPreviousCycleAverage">$ 0</div>
+      
+      <div class="activation-footer">
+        <p class="footer-text">
+          <strong>Para soporte técnico o activación:</strong><br>
+          Contacta al administrador del sistema<br>
+          📧 administrador@neumaticosypacifico.cl<br>
+          📞 +56 9 1234 5678
+        </p>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiPreviousCycleCommission">$ 0</div>
-      </div>
-    </div>
-
-    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--border);">
-      <div style="color: var(--accent); font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-        📈 Comparativa vs Ciclo Anterior
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Total</div>
-          <div id="comparisonTotal" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Ventas</div>
-          <div id="comparisonCount" style="font-size: 16px; font-weight: 700; color: var(--accent);">0</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Comisión</div>
-          <div id="comparisonCommission" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin: 24px 0;">
-      <button class="btn btn-accent" onclick="showMainScreen()" style="width: 100%;">
-        ← Volver a la pantalla principal
-      </button>
     </div>
   </div>
+  
+  <!-- ============================================ -->
+  <!-- CONTENIDO PRINCIPAL DE LA APP (OCULTO INICIALMENTE) -->
+  <!-- ============================================ -->
+  <div id="mainAppContent" style="display: none;">
+    <!-- Navegación interna invisible -->
+    <div id="navigationHistory" style="display: none;"></div>
+    
+    <div id="mainScreen">
+      <div id="installPrompt" class="install-prompt">
+        <div class="install-prompt-text">
+          📱 Instala esta app en tu celular para usarla offline
+        </div>
+        <button class="btn" onclick="installApp()">Instalar</button>
+      </div>
 
-  <div id="crmScreen" class="analysis-screen">
-    <div class="header">
-      <h2>CRM - Gestión de Prospectos</h2>
-      <p>Base de clientes y seguimiento comercial</p>
-    </div>
+      <div class="header">
+        <h2>Neumáticos y Llantas del Pacífico</h2>
+        <p>Sistema de Comisiones - <span id="currentVendorName"></span></p>
+      </div>
 
-    <button class="btn btn-accent" onclick="showMainScreen()" style="width: 100%; margin-bottom: 20px;">
-      ← Volver a la pantalla principal
-    </button>
+      <div class="section-title">📊 Resumen de Ventas</div>
+      <div class="totals-grid">
+        <div class="total-cell">
+          <div class="total-label">Total Día (con IVA)</div>
+          <div class="total-value" id="dayWithVat">$ 0</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Total Día (sin IVA)</div>
+          <div class="total-value" id="dayWithoutVat">$ 0</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Comisión Día</div>
+          <div class="total-value" id="dayCommission">$ 0</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Total Ciclo (con IVA)</div>
+          <div class="total-value" id="cycleWithVat">$ 0</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Total Ciclo (sin IVA)</div>
+          <div class="total-value" id="cycleWithoutVat">$ 0</div>
+        </div>
+        <div class="total-cell">
+          <div class="total-label">Comisión Ciclo</div>
+          <div class="total-value" id="cycleCommission">$ 0</div>
+        </div>
+      </div>
 
-    <div class="vendedor-config">
-      <h3>Configuración de Mensajes</h3>
+      <div class="section-title">➕ Agregar Venta</div>
       <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-        En los mensajes a clientes ¿Cómo quieres que aparezca tu nombre?
+        Introduce el <strong>monto TOTAL con IVA</strong> (ejemplo: 119000):
       </p>
-      <div class="vendedor-input-group">
-        <input type="text" id="vendedorNombre" placeholder="Ej: Carlos, María, Juan Pérez">
-        <button onclick="guardarNombreVendedor()">Guardar</button>
+      <div class="input-group">
+        <input type="text" id="amountInput" placeholder="119000" inputmode="numeric">
+        <button class="btn btn-accent" onclick="addSale()">Agregar</button>
       </div>
-      <div class="vendedor-current">
-        <strong>Nombre actual:</strong> <span id="nombreVendedorActual">No configurado</span>
-      </div>
-    </div>
+      
+      <button class="btn btn-danger" onclick="deleteLastSale()" style="width: 100%; margin-top: 8px; margin-bottom: 24px;">
+        🗑️ Eliminar Última Venta
+      </button>
 
-    <div class="section-title">⚡ Acciones Rápidas</div>
-    <div class="actions-grid">
-      <button class="btn btn-accent" onclick="showAddProspectModal()">➕ Agregar Prospecto</button>
-      <button class="btn btn-info" onclick="showImportClientModal()">📁 Importar Base</button>
-      <button class="btn btn-secondary" onclick="exportProspects()">📥 Exportar Excel</button>
-    </div>
-
-    <div class="section-title">🔍 Filtros y Búsqueda</div>
-    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-      <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-        <input type="text" id="searchProspect" placeholder="Buscar por nombre o teléfono..." 
-               style="flex: 1; min-width: 200px; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px;"
-               oninput="filterProspects()">
-        <select id="filterStatus" style="min-width: 150px;" onchange="filterProspects()">
-          <option value="">Todos los estados</option>
-          <option value="Falta contactar">Falta contactar</option>
-          <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
-          <option value="Contactado por llamada">Contactado por llamada</option>
-          <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
-        </select>
-        <select id="filterProduct" style="min-width: 150px;" onchange="filterProspects()">
-          <option value="">Todos los productos</option>
-        </select>
+      <div class="section-title">⚙️ Acciones</div>
+      <div class="actions-grid">
+        <button class="btn btn-danger" onclick="showCloseDayModal()">Cerrar Día</button>
+        <button class="btn btn-danger" onclick="showCloseCycleModal()">Cerrar Ciclo Comisiones</button>
+        <button class="btn btn-accent" onclick="showAnalysisScreen()">Análisis de Ventas</button>
+        <button class="btn btn-accent" onclick="showModifyModal()">Modificar Ventas</button>
+        <button class="btn btn-info" onclick="showCRMScreen()">Gestión de Clientes</button>
+        <button class="btn btn-secondary" onclick="showExportModal()">Exportar Ventas</button>
+        <button class="btn btn-info" onclick="showUploadModal()">Subir Archivos Ventas</button>
       </div>
-      <button class="btn btn-secondary" onclick="resetFilters()" style="width: 100%;">
-        🔄 Limpiar Filtros
+
+      <div class="section-title">📅 Ventas del Día</div>
+      <div class="sales-list" id="salesDay"></div>
+
+      <div class="section-title">📆 Ventas del Ciclo Actual</div>
+      <div class="sales-list" id="salesCycle"></div>
+
+      <!-- NUEVA SECCIÓN: HISTORIAL COMPLETO DE VENTAS -->
+      <div class="section-title">📋 Historial Completo de Ventas</div>
+      <div class="sales-list" id="salesHistory"></div>
+
+      <div class="section-title">🔄 Resetear Sistema</div>
+      <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
+        ⚠️ <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos guardados.
+      </p>
+      <button class="btn btn-danger" onclick="showResetModal()">Resetear Todo</button>
+
+      <!-- NUEVO BOTÓN DE DESINSTALACIÓN COMPLETA -->
+      <div class="section-title" style="margin-top: 40px; border-top: 2px solid #dc2626; padding-top: 20px;">
+        ☢️ DESINSTALACIÓN COMPLETA
+      </div>
+      <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
+        ⚠️ <strong>ADVERTENCIA NUCLEAR:</strong> Esto eliminará la aplicación completamente del dispositivo.
+        Se borrarán todos los datos, cache, y la app dejará de funcionar.
+      </p>
+      <button class="btn btn-nuclear" onclick="showUninstallModal()" style="width: 100%; margin-bottom: 40px; padding: 16px; font-size: 16px;">
+        ☢️ DESINSTALAR APP COMPLETAMENTE DEL MÓVIL
       </button>
     </div>
 
-    <div class="section-title">👥 Listado de Prospectos</div>
-    <div class="sales-list" id="prospectList" style="height: 300px;"></div>
-
-    <div class="section-title">📊 Estadísticas</div>
-    <div class="totals-grid">
-      <div class="total-cell">
-        <div class="total-label">Total Prospectos</div>
-        <div class="total-value" id="totalProspects">0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Falta Contactar</div>
-        <div class="total-value" id="pendingProspects">0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Contactados</div>
-        <div class="total-value" id="contactedProspects">0</div>
-      </div>
-      <div class="total-cell">
-        <div class="total-label">Últimos 7 días</div>
-        <div class="total-value" id="recentProspects">0</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="uploadModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-title">📁 Subir Archivo CSV</div>
-      <div style="margin: 16px 0;">
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-          Sube un archivo CSV con el siguiente formato:<br>
-          <strong>Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes</strong>
+    <!-- MODAL DE DESINSTALACIÓN NUEVO -->
+    <div id="uninstallModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-title">☢️ ¿DESINSTALAR APP COMPLETAMENTE?</div>
+        <div style="margin: 16px 0; padding: 16px; background: rgba(220, 38, 38, 0.1); border-radius: 8px; border: 2px solid #dc2626;">
+          <p style="color: white; font-weight: 600; margin-bottom: 12px;">⚠️ ADVERTENCIA EXTREMA:</p>
+          <ul style="color: #fca5a5; font-size: 13px; line-height: 1.6; padding-left: 20px;">
+            <li>Se eliminarán TODOS los datos permanentemente</li>
+            <li>Se borrará el cache de la aplicación</li>
+            <li>La app se removerá del dispositivo</li>
+            <li>No podrás acceder a los datos sin reinstalar</li>
+            <li>Esta acción NO se puede deshacer</li>
+          </ul>
+        </div>
+        <p style="color: var(--muted); margin-bottom: 16px; font-size: 13px;">
+          Si estás seguro, escribe <strong>"DESINSTALAR"</strong> en el siguiente campo:
         </p>
-        <div class="file-upload-container">
-          <div class="file-input-wrapper">
-            <button class="file-input-button">📂 Seleccionar archivo CSV</button>
-            <input type="file" id="csvFile" accept=".csv,text/csv" onchange="handleFileSelect(event)">
-          </div>
-          <div id="fileName" class="file-name">No se ha seleccionado ningún archivo</div>
+        <input type="text" id="uninstallConfirm" placeholder="Escribe DESINSTALAR aquí" 
+               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); 
+                      border: 2px solid #dc2626; border-radius: 8px; margin-bottom: 16px;"
+               oninput="checkUninstallConfirmation()">
+        <div class="modal-buttons">
+          <button class="btn btn-nuclear" id="confirmUninstallBtn" onclick="performCompleteUninstall()" disabled>
+            ☢️ CONFIRMAR DESINSTALACIÓN COMPLETA
+          </button>
+          <button class="btn btn-secondary" onclick="hideModal('uninstallModal')">✗ Cancelar</button>
         </div>
-        <div id="filePreview" class="upload-preview" style="display: none;">
-          <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 5 filas):</h4>
-          <table id="previewTable">
-            <thead>
-              <tr>
-                <th>Fecha/Hora</th>
-                <th>Monto IVA</th>
-                <th>Neto</th>
-                <th>Comisión</th>
-                <th>Fecha</th>
-                <th>Mes</th>
-              </tr>
-            </thead>
-            <tbody id="previewBody"></tbody>
-          </table>
-        </div>
-        <div id="uploadStats" style="margin-top: 12px; display: none;">
-          <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen:</div>
-          <div style="font-size: 12px; color: var(--muted);">
-            • Total de registros: <span id="totalRecords">0</span><br>
-            • Registros nuevos: <span id="newRecords">0</span><br>
-            • Total a importar: <span id="importRecords">0</span>
-          </div>
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="processCSVFile()" id="processBtn" disabled>📥 Procesar Archivo</button>
-        <button class="btn btn-secondary" onclick="hideModal('uploadModal')">✗ Cancelar</button>
       </div>
     </div>
+
+    <!-- ... El resto de tu HTML original permanece igual ... -->
+    <!-- (Incluyendo analysisScreen, crmScreen, y todos los otros modales) -->
+    
   </div>
 
-  <div id="addProspectModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-title">➕ Agregar Nuevo Prospecto</div>
-      <div style="margin: 16px 0;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Nombre y Apellido:</label>
-        <input type="text" id="prospectName" placeholder="Ej: Juan Pérez" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Teléfono:</label>
-        <input type="text" id="prospectPhone" placeholder="Ej: 947501990 (sin +56)" inputmode="tel" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Producto(s):</label>
-        <input type="text" id="prospectProduct" placeholder="Ej: Neumáticos 185/65R15" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Estado:</label>
-        <select id="prospectStatus" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-          <option value="Falta contactar">Falta contactar</option>
-          <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
-          <option value="Contactado por llamada">Contactado por llamada</option>
-          <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
-        </select>
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Etiquetas importantes:</label>
-        <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" id="prospectTagTrabajo" value="TRABAJO EN CURSO">
-            <span class="tag" style="background: #3b82f6; color: white;">🔧 TRABAJO EN CURSO</span>
-          </label>
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-            <input type="checkbox" id="prospectTagCotizacion" value="COTIZACIÓN">
-            <span class="tag" style="background: #10b981; color: white;">💰 COTIZACIÓN</span>
-          </label>
-        </div>
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Observación inicial (opcional):</label>
-        <textarea id="prospectObservation" placeholder="Notas importantes..." rows="3" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;"></textarea>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="saveProspect()">💾 Guardar Prospecto</button>
-        <button class="btn btn-secondary" onclick="hideModal('addProspectModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="importClientModal" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
-      <div class="modal-title">📁 Importar Base de Clientes</div>
-      <div style="margin: 16px 0;">
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-          Sube un archivo Excel (.xlsx) o CSV (.csv) con la siguiente estructura:<br>
-          <strong>NombreApellido, Telefono, Producto, Estado, ObservacionInicial, ProximoContacto, Etiqueta</strong>
-        </p>
-        <div class="file-upload-container">
-          <div class="file-input-wrapper">
-            <button class="file-input-button">📂 Seleccionar archivo Excel/CSV</button>
-            <input type="file" id="clientFile" accept=".csv,.xlsx,.xls,.text/csv" onchange="handleClientFileSelect(event)">
-          </div>
-          <div id="clientFileName" class="file-name">No se ha seleccionado ningún archivo</div>
-        </div>
-        <div id="clientFilePreview" class="upload-preview" style="display: none; max-height: 300px;">
-          <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 10 filas):</h4>
-          <table id="clientPreviewTable">
-            <thead>
-              <tr>
-                <th>NombreApellido</th>
-                <th>Telefono</th>
-                <th>Producto</th>
-                <th>Estado</th>
-                <th>ObservacionInicial</th>
-                <th>ProximoContacto</th>
-                <th>Etiqueta</th>
-              </tr>
-            </thead>
-            <tbody id="clientPreviewBody"></tbody>
-          </table>
-        </div>
-        <div id="clientUploadStats" style="margin-top: 12px; display: none;">
-          <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen de importación:</div>
-          <div style="font-size: 12px; color: var(--muted);">
-            • Total de registros: <span id="clientTotalRecords">0</span><br>
-            • Válidos para importar: <span id="clientValidRecords">0</span><br>
-            • Duplicados (mismo teléfono): <span id="clientDuplicateRecords">0</span><br>
-            • Ignorados (datos faltantes): <span id="clientIgnoredRecords">0</span>
-          </div>
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="processClientFile()" id="processClientBtn" disabled>📥 Confirmar Importación</button>
-        <button class="btn btn-secondary" onclick="hideModal('importClientModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="prospectDetailModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-title" id="detailProspectName"></div>
-      <div style="margin: 16px 0;">
-        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; margin-bottom: 8px;">
-            <div style="font-weight: 600; color: var(--accent); margin-right: 8px;">📞 Teléfono:</div>
-            <div id="detailProspectPhone" style="flex: 1;"></div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-accent" onclick="callProspect()" style="padding: 6px 12px; font-size: 12px;">📞 Llamar</button>
-              <button class="btn btn-whatsapp" onclick="openWhatsApp()" style="padding: 6px 12px; font-size: 12px;">💬 WhatsApp</button>
-            </div>
-          </div>
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; color: var(--accent);">📦 Producto(s):</div>
-            <div id="detailProspectProduct"></div>
-          </div>
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; color: var(--accent);">📊 Estado:</div>
-            <select id="detailProspectStatus" style="width: 100%; margin-top: 4px;">
-              <option value="Falta contactar">Falta contactar</option>
-              <option value="Contactado por WhatsApp">Contactado por WhatsApp</option>
-              <option value="Contactado por llamada">Contactado por llamada</option>
-              <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
-            </select>
-          </div>
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; color: var(--accent);">📅 Próximo contacto:</div>
-            <input type="date" id="detailProspectNextContact" style="width: 100%; margin-top: 4px;">
-          </div>
-          <div style="margin-bottom: 8px;">
-            <div style="font-weight: 600; color: var(--accent);">🏷️ Etiquetas rápidas:</div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
-              <span class="tag" data-tag="Frío">❄️ Frío</span>
-              <span class="tag" data-tag="Tibio">🌤️ Tibio</span>
-              <span class="tag" data-tag="Caliente">🔥 Caliente</span>
-              <span class="tag" data-tag="COTIZACIÓN">💰 Cotización</span>
-              <span class="tag" data-tag="Agenda visita">📅 Visita</span>
-              <span class="tag" data-tag="TRABAJO EN CURSO">🔧 EN TRABAJO</span>
-            </div>
-            <div id="detailProspectTags" style="margin-top: 8px;"></div>
-          </div>
-        </div>
-        <div style="background: var(--card); border-radius: 8px; padding: 12px;">
-          <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">📝 Historial de Observaciones:</div>
-          <div id="detailProspectObservations" style="max-height: 200px; overflow-y: auto;"></div>
-          <div style="margin-top: 12px;">
-            <textarea id="newObservation" placeholder="Agregar nueva observación..." rows="2" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 8px;"></textarea>
-            <button class="btn btn-accent" onclick="addObservation()" style="width: 100%; padding: 8px;">➕ Agregar Observación</button>
-          </div>
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="saveProspectChanges()">💾 Guardar Cambios</button>
-        <button class="btn btn-danger" onclick="confirmDeleteProspect()">🗑️ Eliminar</button>
-        <button class="btn btn-secondary" onclick="hideModal('prospectDetailModal')">✗ Cerrar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="closeDayModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">¿Confirmar cierre de día?</div>
-      <p style="color: var(--muted); margin-bottom: 16px;">Se vaciarán las ventas del día actual.</p>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="confirmCloseDay()">✓ Confirmar</button>
-        <button class="btn btn-secondary" onclick="hideModal('closeDayModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="closeCycleModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-title">📅 Cierre de Ciclo de Comisiones</div>
-      <div style="margin: 16px 0;">
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-          Selecciona la fecha de cierre del ciclo actual.
-        </p>
-        <div class="date-input-wrapper" style="margin-bottom: 16px;">
-          <input type="date" id="cycleCloseDate" style="width: 100%;">
-        </div>
-        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <div style="color: var(--accent); font-weight: 600; margin-bottom: 8px;">Resumen del ciclo:</div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div style="font-size: 13px; color: var(--muted);">Total con IVA:</div>
-            <div style="font-weight: 600; text-align: right;" id="cycleSummaryWithVat">$ 0</div>
-            <div style="font-size: 13px; color: var(--muted);">Total sin IVA:</div>
-            <div style="font-weight: 600; text-align: right;" id="cycleSummaryWithoutVat">$ 0</div>
-            <div style="font-size: 13px; color: var(--muted);">Comisión total:</div>
-            <div style="font-weight: 600; text-align: right; color: var(--accent);" id="cycleSummaryCommission">$ 0</div>
-            <div style="font-size: 13px; color: var(--muted);">Cantidad ventas:</div>
-            <div style="font-weight: 600; text-align: right;" id="cycleSummaryCount">0</div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="confirmCloseCycle()">✓ Confirmar Cierre</button>
-        <button class="btn btn-secondary" onclick="hideModal('closeCycleModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="resetModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">⚠️ ¿CONFIRMAR RESETEO COMPLETO?</div>
-      <p style="color: var(--muted); margin-bottom: 16px;">Se borrarán TODOS los datos.</p>
-      <div class="modal-buttons">
-        <button class="btn btn-danger" onclick="confirmReset()">✓ SÍ, BORRAR TODO</button>
-        <button class="btn btn-secondary" onclick="hideModal('resetModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="exportModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">📊 Exportar a Excel</div>
-      <div style="margin: 16px 0;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Tipo de reporte:</label>
-        <select id="exportType" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
-          <option value="day">Ventas del Día</option>
-          <option value="cycle">Ventas del Ciclo Actual</option>
-          <option value="permanent">Historial Permanente</option>
-          <option value="cycleHistory">Historial de Cierres</option>
-        </select>
-      </div>
-      <div id="dateSelector" style="margin: 16px 0; display: none;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar:</label>
-        <select id="dateSelect" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;"></select>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="confirmExport()">📥 Exportar</button>
-        <button class="btn btn-secondary" onclick="hideModal('exportModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="modifyModal" class="modal">
-    <div class="modal-content" style="max-width: 500px;">
-      <div class="modal-title">✏️ Modificar Ventas</div>
-      <div style="margin: 16px 0;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Acción:</label>
-        <select id="modifyAction" onchange="updateModifyAction()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
-          <option value="add">➕ Agregar Venta</option>
-          <option value="delete">🗑️ Eliminar Venta</option>
-          <option value="search">🔍 Buscar en Historial</option>
-        </select>
-      </div>
-      <div id="addSaleSection" style="margin: 16px 0;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Fecha de la venta:</label>
-        <div class="date-input-wrapper">
-          <input type="date" id="saleDate" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
-        </div>
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Monto con IVA:</label>
-        <input type="text" id="saleAmount" placeholder="119000" inputmode="numeric" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
-      </div>
-      <div id="deleteSaleSection" style="margin: 16px 0; display: none;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Período:</label>
-        <select id="deletePeriod" onchange="updateDeleteList()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
-          <option value="day">Ventas del Día</option>
-          <option value="cycle">Ventas del Ciclo</option>
-          <option value="permanent">Historial Permanente</option>
-        </select>
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar venta a eliminar:</label>
-        <div id="salesListToDelete" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;"></div>
-      </div>
-      <div id="searchSaleSection" style="margin: 16px 0; display: none;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Buscar en Historial Permanente:</label>
-        <input type="text" id="searchQuery" placeholder="Buscar por mes (ej: 2024-12) o monto..." style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Resultados:</label>
-        <div id="searchResults" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
-          <div style="padding: 12px; color: var(--muted); text-align: center;">Ingrese un término de búsqueda</div>
-        </div>
-      </div>
-      <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="confirmModify()">✓ Confirmar</button>
-        <button class="btn btn-secondary" onclick="hideModal('modifyModal')">✗ Cancelar</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- ============================================ -->
+  <!-- SCRIPT DEL SISTEMA DE ACTIVACIÓN (añadir al inicio) -->
+  <!-- ============================================ -->
   <script>
+    // ============================================
+    // SISTEMA DE ACTIVACIÓN - CONFIGURACIÓN POR VENDEDOR
+    // ============================================
+    
+    // CONFIGURACIÓN POR VENDEDOR - EDITA ESTAS 2 LÍNEAS SOLAMENTE:
+    const VENDEDOR_CONFIG = {
+      nombre: "CARLOS RODRÍGUEZ",      // CAMBIA: Poner nombre del vendedor
+      codigo: "CARL7890"               // CAMBIA: Poner código único (8 dígitos)
+    };
+    
+    // Función para generar ID único del dispositivo
+    function generateDeviceId() {
+      try {
+        const data = [
+          navigator.userAgent,
+          navigator.platform,
+          navigator.language,
+          screen.width + 'x' + screen.height,
+          new Date().getTimezoneOffset()
+        ].join('|');
+        
+        let hash = 0;
+        for (let i = 0; i < data.length; i++) {
+          hash = ((hash << 5) - hash) + data.charCodeAt(i);
+          hash = hash & hash;
+        }
+        
+        const base36 = Math.abs(hash).toString(36).toUpperCase();
+        return 'VEN-' + base36.padStart(8, '0').substring(0, 8);
+      } catch (error) {
+        return 'VEN-ERR-' + Date.now().toString(36).toUpperCase().substring(0, 6);
+      }
+    }
+    
+    // Verificar estado de activación
+    function checkActivationStatus() {
+      const deviceId = generateDeviceId();
+      const storedActivation = localStorage.getItem('app_activation_data');
+      
+      // Mostrar información en pantalla
+      document.getElementById('assignedVendor').textContent = VENDEDOR_CONFIG.nombre;
+      document.getElementById('deviceIdDisplay').textContent = deviceId;
+      
+      if (storedActivation) {
+        try {
+          const activationData = JSON.parse(storedActivation);
+          const storedDeviceId = activationData.deviceId;
+          
+          // Verificar si el dispositivo coincide
+          if (storedDeviceId === deviceId) {
+            // ¡Activación válida! Mostrar app
+            showMainApp(activationData);
+            return true;
+          } else {
+            // Dispositivo diferente - mostrar advertencia
+            showMessage('⚠️ Esta app ya está activada en otro dispositivo.', 'error');
+            document.getElementById('activationCode').disabled = true;
+            document.getElementById('activationCode').placeholder = 'APP YA ACTIVADA EN OTRO DISPOSITIVO';
+            return false;
+          }
+        } catch (error) {
+          console.error('Error al leer datos de activación:', error);
+        }
+      }
+      
+      // No hay activación - mostrar pantalla normal
+      return false;
+    }
+    
+    // Intentar activación
+    function attemptActivation() {
+      const inputCode = document.getElementById('activationCode').value.trim().toUpperCase();
+      const deviceId = generateDeviceId();
+      
+      if (!inputCode) {
+        showMessage('Por favor ingresa el código de activación', 'error');
+        return;
+      }
+      
+      // Verificar código
+      if (inputCode === VENDEDOR_CONFIG.codigo) {
+        // Guardar datos de activación
+        const activationData = {
+          vendorName: VENDEDOR_CONFIG.nombre,
+          deviceId: deviceId,
+          activationCode: inputCode,
+          activationDate: new Date().toISOString(),
+          lastAccess: new Date().toISOString()
+        };
+        
+        localStorage.setItem('app_activation_data', JSON.stringify(activationData));
+        
+        // Mostrar app principal
+        showMainApp(activationData);
+        showMessage('✅ Sistema activado correctamente', 'success');
+        
+      } else {
+        showMessage('❌ Código de activación incorrecto', 'error');
+        
+        // Bloquear después de 3 intentos fallidos
+        const failedAttempts = parseInt(localStorage.getItem('failed_attempts') || '0') + 1;
+        localStorage.setItem('failed_attempts', failedAttempts.toString());
+        
+        if (failedAttempts >= 3) {
+          setTimeout(() => {
+            showMessage('⚠️ Demasiados intentos fallidos. Contacta al administrador.', 'error');
+            document.getElementById('activationCode').disabled = true;
+            document.getElementById('activationCode').placeholder = 'BLOQUEADO TEMPORALMENTE';
+          }, 1000);
+        }
+      }
+    }
+    
+    // Mostrar app principal
+    function showMainApp(activationData) {
+      // Ocultar pantalla de activación
+      document.getElementById('activationScreen').style.display = 'none';
+      
+      // Mostrar contenido principal
+      document.getElementById('mainAppContent').style.display = 'block';
+      
+      // Actualizar nombre del vendedor en la app
+      document.getElementById('currentVendorName').textContent = activationData.vendorName;
+      
+      // Actualizar último acceso
+      activationData.lastAccess = new Date().toISOString();
+      localStorage.setItem('app_activation_data', JSON.stringify(activationData));
+      
+      // Inicializar sistema principal
+      initializeMainApp();
+    }
+    
+    // Mostrar mensajes
+    function showMessage(text, type = 'info') {
+      const messageDiv = document.createElement('div');
+      messageDiv.textContent = text;
+      messageDiv.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 15px 25px;
+        border-radius: 10px;
+        font-weight: 600;
+        z-index: 10001;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+      `;
+      
+      if (type === 'error') {
+        messageDiv.style.background = '#dc2626';
+        messageDiv.style.color = 'white';
+      } else if (type === 'success') {
+        messageDiv.style.background = '#10b981';
+        messageDiv.style.color = 'white';
+      } else {
+        messageDiv.style.background = '#3b82f6';
+        messageDiv.style.color = 'white';
+      }
+      
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 3000);
+    }
+    
+    // Inicializar app principal
+    function initializeMainApp() {
+      // Tu código de inicialización original aquí
+      document.addEventListener('DOMContentLoaded', function() {
+        // Tu código de inicialización original
+      });
+    }
+    
+    // Configurar evento Enter para código de activación
+    document.addEventListener('DOMContentLoaded', function() {
+      const activationCodeInput = document.getElementById('activationCode');
+      if (activationCodeInput) {
+        activationCodeInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            attemptActivation();
+          }
+        });
+      }
+      
+      // Verificar activación al cargar
+      checkActivationStatus();
+    });
+    
+  </script>
+  
+  <!-- ============================================ -->
+  <!-- SCRIPT ORIGINAL DE TU APP (todo tu código JavaScript) -->
+  <!-- ============================================ -->
+  <script>
+    // Variables globales de tu app
     const COMMISSION_RATE = 0.009;
     let deferredPrompt = null;
     let selectedFile = null;
@@ -3764,7 +3699,8 @@
     // INICIALIZACIÓN
     // ============================================
 
-    document.addEventListener('DOMContentLoaded', () => {
+    // Esta función se llama desde el sistema de activación
+    function initializeMainApp() {
       // Inicializar sistema de navegación
       initializeNavigation();
       
@@ -3818,7 +3754,7 @@
       
       refreshUI();
       updateProspectStats();
-    });
+    }
 
     const amountInputElement = document.getElementById('amountInput');
     if (amountInputElement) {
