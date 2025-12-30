@@ -3179,7 +3179,7 @@
       if (cycleCloseDate) {
         const today = new Date().toISOString().split('T')[0];
         cycleCloseDate.value = today;
-        cycleCloseDate.min = today;
+        // NO SE ESTABLECE RESTRICCIÓN DE FECHA MÍNIMA - Permitir cualquier fecha
       }
 
       updateCycleSummary();
@@ -3225,17 +3225,16 @@
     }
 
     function showCloseCycleModal() {
-  showModal('closeCycleModal');
-  updateCycleSummary();
-  
-  const cycleCloseDate = document.getElementById('cycleCloseDate');
-  if (cycleCloseDate) {
-    // Solo establecer la fecha actual como valor por defecto
-    const today = new Date().toISOString().split('T')[0];
-    cycleCloseDate.value = today;
-    // No establecer restricciones de fecha mínima o máxima
-  }
-}
+      showModal('closeCycleModal');
+      updateCycleSummary();
+      
+      // CORRECCIÓN: No establecer restricciones de fecha mínima
+      const cycleCloseDate = document.getElementById('cycleCloseDate');
+      if (cycleCloseDate) {
+        const today = new Date().toISOString().split('T')[0];
+        cycleCloseDate.value = today;
+        // NO establecer cycleCloseDate.min = today; - Permitir fechas anteriores
+      }
     }
 
     function showResetModal() {
