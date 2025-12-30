@@ -33,6 +33,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       padding: 8px;
       overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
     }
     
     .header {
@@ -781,6 +782,9 @@
   </style>
 </head>
 <body>
+  <!-- Navegación interna invisible -->
+  <div id="navigationHistory" style="display: none;"></div>
+  
   <div id="mainScreen">
     <div id="installPrompt" class="install-prompt">
       <div class="install-prompt-text">
@@ -1410,7 +1414,155 @@
     let currentProspectId = null;
     let clientFileData = [];
     let clientFileHeaders = [];
-
+    
+    // ============================================
+    // SISTEMA DE NAVEGACIÓN INTERNA
+    // ============================================
+    
+    // Historial de navegación
+    let navigationHistory = [];
+    let currentNavigationIndex = -1;
+    
+    // Configuración de navegación
+    const APP_SCREENS = {
+      MAIN: 'mainScreen',
+      ANALYSIS: 'analysisScreen',
+      CRM: 'crmScreen'
+    };
+    
+    // Estado actual de la pantalla
+    let currentScreen = APP_SCREENS.MAIN;
+    
+    /**
+     * Inicializar sistema de navegación
+     */
+    function initializeNavigation() {
+      // Agregar pantalla principal al historial
+      navigationHistory.push(APP_SCREENS.MAIN);
+      currentNavigationIndex = 0;
+      
+      // Configurar evento de popstate para navegación del navegador
+      window.addEventListener('popstate', function(event) {
+        event.preventDefault();
+        
+        // Si hay historial interno, navegar hacia atrás en la app
+        if (currentNavigationIndex > 0) {
+          goBackInApp();
+        } else {
+          // Mostrar mensaje de confirmación antes de salir
+          if (confirm('¿Desea salir de la aplicación?')) {
+            // Salir de la app (solo si es PWA instalada)
+            if (window.matchMedia('(display-mode: standalone)').matches || 
+                window.navigator.standalone === true) {
+              // En PWA, prevenir salida
+              pushState();
+              showToast('Presione nuevamente para salir');
+            } else {
+              // En navegador, permitir salida
+              window.history.go(-1);
+            }
+          } else {
+            pushState();
+          }
+        }
+      });
+      
+      // Configurar estado inicial
+      pushState();
+    }
+    
+    /**
+     * Agregar estado al historial del navegador
+     */
+    function pushState() {
+      const state = { screen: currentScreen, index: currentNavigationIndex };
+      window.history.pushState(state, '', '#app-' + currentScreen);
+    }
+    
+    /**
+     * Navegar a una pantalla específica
+     */
+    function navigateToScreen(screenId) {
+      // Guardar pantalla actual en historial
+      if (currentNavigationIndex < navigationHistory.length - 1) {
+        // Si estamos navegando desde un punto intermedio del historial,
+        // eliminamos las pantallas posteriores
+        navigationHistory = navigationHistory.slice(0, currentNavigationIndex + 1);
+      }
+      
+      navigationHistory.push(screenId);
+      currentNavigationIndex = navigationHistory.length - 1;
+      currentScreen = screenId;
+      
+      // Actualizar interfaz
+      showScreen(screenId);
+      
+      // Actualizar historial del navegador
+      pushState();
+    }
+    
+    /**
+     * Navegar hacia atrás dentro de la app
+     */
+    function goBackInApp() {
+      if (currentNavigationIndex > 0) {
+        currentNavigationIndex--;
+        const previousScreen = navigationHistory[currentNavigationIndex];
+        currentScreen = previousScreen;
+        
+        // Actualizar interfaz
+        showScreen(previousScreen);
+        
+        // Actualizar historial del navegador
+        pushState();
+        return true;
+      }
+      return false;
+    }
+    
+    /**
+     * Mostrar pantalla específica
+     */
+    function showScreen(screenId) {
+      // Ocultar todas las pantallas
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('analysisScreen').classList.remove('active');
+      document.getElementById('crmScreen').classList.remove('active');
+      
+      // Mostrar pantalla solicitada
+      if (screenId === APP_SCREENS.MAIN) {
+        document.getElementById('mainScreen').style.display = 'block';
+        refreshUI();
+      } else if (screenId === APP_SCREENS.ANALYSIS) {
+        document.getElementById('analysisScreen').classList.add('active');
+        calculateAndDisplayKPIs();
+      } else if (screenId === APP_SCREENS.CRM) {
+        document.getElementById('crmScreen').classList.add('active');
+        loadProspects();
+        updateProspectStats();
+        actualizarNombreVendedor();
+      }
+      
+      currentScreen = screenId;
+    }
+    
+    /**
+     * Manejar clic en botón atrás del dispositivo
+     */
+    function handleBackButton() {
+      // Primero verificar si hay modales abiertos
+      const openModals = document.querySelectorAll('.modal.active');
+      if (openModals.length > 0) {
+        // Cerrar el último modal abierto
+        const lastModal = openModals[openModals.length - 1];
+        lastModal.classList.remove('active');
+        return true;
+      }
+      
+      // Si no hay modales, navegar hacia atrás en la app
+      return goBackInApp();
+    }
+    
     // ============================================
     // FUNCIONES CRÍTICAS CORREGIDAS - LOGICA DE CICLOS
     // ============================================
@@ -1522,26 +1674,15 @@
     // ============================================
 
     function showMainScreen() {
-      document.getElementById('mainScreen').style.display = 'block';
-      document.getElementById('analysisScreen').classList.remove('active');
-      document.getElementById('crmScreen').classList.remove('active');
-      refreshUI();
+      navigateToScreen(APP_SCREENS.MAIN);
     }
 
     function showAnalysisScreen() {
-      document.getElementById('mainScreen').style.display = 'none';
-      document.getElementById('analysisScreen').classList.add('active');
-      document.getElementById('crmScreen').classList.remove('active');
-      calculateAndDisplayKPIs();
+      navigateToScreen(APP_SCREENS.ANALYSIS);
     }
 
     function showCRMScreen() {
-      document.getElementById('mainScreen').style.display = 'none';
-      document.getElementById('analysisScreen').classList.remove('active');
-      document.getElementById('crmScreen').classList.add('active');
-      loadProspects();
-      updateProspectStats();
-      actualizarNombreVendedor();
+      navigateToScreen(APP_SCREENS.CRM);
     }
 
     function getStorage(key) {
@@ -3615,7 +3756,7 @@
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
-      document.body.appendChild(toot);
+      document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 2000);
     }
 
@@ -3624,6 +3765,9 @@
     // ============================================
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar sistema de navegación
+      initializeNavigation();
+      
       const saleDateInput = document.getElementById('saleDate');
       if (saleDateInput) {
         saleDateInput.value = getCurrentDate();
@@ -3664,6 +3808,14 @@
       
       actualizarNombreVendedor();
       
+      // Configurar evento de tecla Escape para simular botón atrás
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Backspace') {
+          e.preventDefault();
+          handleBackButton();
+        }
+      });
+      
       refreshUI();
       updateProspectStats();
     });
@@ -3699,7 +3851,7 @@
         'processClientFile','exportProspects','guardarNombreVendedor','openWhatsApp','callProspect','confirmCloseDay','confirmCloseCycle',
         'confirmReset','confirmExport','confirmModify','saveProspectChanges','confirmDeleteProspect','showProspectDetail','filterProspects',
         'resetFilters','handleFileSelect','handleClientFileSelect','processCSVFile','processClientFile','hideModal','showModal',
-        'showUninstallModal','checkUninstallConfirmation','performCompleteUninstall'
+        'showUninstallModal','checkUninstallConfirmation','performCompleteUninstall','handleBackButton','goBackInApp'
       ];
       apiNames.forEach(name => {
         try {
