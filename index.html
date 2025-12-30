@@ -794,16 +794,16 @@
         <div class="total-value" id="dayCommission">$ 0</div>
       </div>
       <div class="total-cell">
-        <div class="total-label">Total Mes (con IVA)</div>
-        <div class="total-value" id="monthWithVat">$ 0</div>
+        <div class="total-label">Total Ciclo (con IVA)</div>
+        <div class="total-value" id="cycleWithVat">$ 0</div>
       </div>
       <div class="total-cell">
-        <div class="total-label">Total Mes (sin IVA)</div>
-        <div class="total-value" id="monthWithoutVat">$ 0</div>
+        <div class="total-label">Total Ciclo (sin IVA)</div>
+        <div class="total-value" id="cycleWithoutVat">$ 0</div>
       </div>
       <div class="total-cell">
-        <div class="total-label">Comisión Mes</div>
-        <div class="total-value" id="monthCommission">$ 0</div>
+        <div class="total-label">Comisión Ciclo</div>
+        <div class="total-value" id="cycleCommission">$ 0</div>
       </div>
     </div>
 
@@ -826,7 +826,7 @@
     <div class="actions-grid">
       <!-- Fila 1 -->
       <button class="btn btn-danger" onclick="showCloseDayModal()">Cerrar Día</button>
-      <button class="btn btn-danger" onclick="showCloseMonthModal()">Cerrar Mes</button>
+      <button class="btn btn-danger" onclick="showCloseCycleModal()">Cerrar Ciclo Comisiones</button>
       
       <!-- Fila 2 -->
       <button class="btn btn-accent" onclick="showAnalysisScreen()">Análisis de Ventas</button>
@@ -843,22 +843,22 @@
     <!-- 4. GRÁFICOS -->
     <div class="section-title">📊 Gráficos</div>
     <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Diarias (Mes Actual)</h3>
+      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Diarias (Ciclo Actual)</h3>
       <canvas id="dailyChart" style="max-height: 250px;"></canvas>
     </div>
     
     <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Mensuales (Histórico)</h3>
-      <canvas id="monthlyChart" style="max-height: 250px;"></canvas>
+      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Historial de Cierres de Ciclo</h3>
+      <canvas id="cycleHistoryChart" style="max-height: 250px;"></canvas>
     </div>
 
     <!-- 5. VENTAS DEL DÍA (4 registros visibles) -->
     <div class="section-title">📅 Ventas del Día</div>
     <div class="sales-list" id="salesDay"></div>
 
-    <!-- 6. VENTAS DEL MES (4 registros visibles) -->
-    <div class="section-title">📆 Ventas del Mes</div>
-    <div class="sales-list" id="salesMonth"></div>
+    <!-- 6. VENTAS DEL CICLO (4 registros visibles) -->
+    <div class="section-title">📆 Ventas del Ciclo Actual</div>
+    <div class="sales-list" id="salesCycle"></div>
 
     <!-- 7. RESETEAR SISTEMA -->
     <div class="section-title">🔄 Resetear Sistema</div>
@@ -923,33 +923,28 @@
       </div>
     </div>
 
-    <div class="section-title">📊 KPI Mensuales</div>
+    <div class="section-title">📊 KPI del Ciclo Actual</div>
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-period">MES</div>
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiMonthTotal">$ 0</div>
+        <div class="kpi-value" id="kpiCycleTotal">$ 0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">MES</div>
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiMonthCount">0</div>
+        <div class="kpi-value" id="kpiCycleCount">0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">MES</div>
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiMonthAverage">$ 0</div>
+        <div class="kpi-value" id="kpiCycleAverage">$ 0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">MES</div>
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiMonthCommission">$ 0</div>
+        <div class="kpi-value" id="kpiCycleCommission">$ 0</div>
       </div>
-    </div>
-
-    <div class="section-title">🕒 Ventas por Hora</div>
-    <div class="hourly-chart-container">
-      <canvas id="hourlyChart" style="max-height: 200px;"></canvas>
     </div>
 
     <div style="margin: 24px 0;">
@@ -1301,13 +1296,45 @@
     </div>
   </div>
 
-  <div id="closeMonthModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-title">¿Confirmar cierre de mes?</div>
-      <p style="color: var(--muted); margin-bottom: 16px;">Se vaciarán las ventas del día y del mes actual.</p>
+  <!-- NUEVO MODAL PARA CIERRE DE CICLO -->
+  <div id="closeCycleModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-title">📅 Cierre de Ciclo de Comisiones</div>
+      
+      <div style="margin: 16px 0;">
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+          Selecciona la fecha de cierre del ciclo actual. Se calcularán las comisiones de las ventas desde el último cierre hasta esta fecha.
+        </p>
+        
+        <div class="date-input-wrapper" style="margin-bottom: 16px;">
+          <input type="date" id="cycleCloseDate" style="width: 100%;">
+        </div>
+        
+        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 8px;">Resumen del ciclo:</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="font-size: 13px; color: var(--muted);">Total con IVA:</div>
+            <div style="font-weight: 600; text-align: right;" id="cycleSummaryWithVat">$ 0</div>
+            <div style="font-size: 13px; color: var(--muted);">Total sin IVA:</div>
+            <div style="font-weight: 600; text-align: right;" id="cycleSummaryWithoutVat">$ 0</div>
+            <div style="font-size: 13px; color: var(--muted);">Comisión total:</div>
+            <div style="font-weight: 600; text-align: right; color: var(--accent);" id="cycleSummaryCommission">$ 0</div>
+            <div style="font-size: 13px; color: var(--muted);">Cantidad ventas:</div>
+            <div style="font-weight: 600; text-align: right;" id="cycleSummaryCount">0</div>
+          </div>
+        </div>
+        
+        <div style="background: rgba(220, 38, 38, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="color: #dc2626; font-weight: 600; font-size: 13px; margin-bottom: 4px;">⚠️ Advertencia:</div>
+          <div style="font-size: 12px; color: #dc2626;">
+            Al cerrar el ciclo, se reiniciará el acumulado de comisiones. Las ventas posteriores a esta fecha se acumularán para el próximo ciclo.
+          </div>
+        </div>
+      </div>
+
       <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="confirmCloseMonth()">✓ Confirmar</button>
-        <button class="btn btn-secondary" onclick="hideModal('closeMonthModal')">✗ Cancelar</button>
+        <button class="btn btn-accent" onclick="confirmCloseCycle()">✓ Confirmar Cierre</button>
+        <button class="btn btn-secondary" onclick="hideModal('closeCycleModal')">✗ Cancelar</button>
       </div>
     </div>
   </div>
@@ -1331,8 +1358,9 @@
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Tipo de reporte:</label>
         <select id="exportType" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
           <option value="day">Ventas del Día</option>
-          <option value="month">Ventas del Mes</option>
+          <option value="cycle">Ventas del Ciclo Actual</option>
           <option value="permanent">Historial Permanente</option>
+          <option value="cycleHistory">Historial de Cierres</option>
         </select>
       </div>
 
@@ -1376,7 +1404,7 @@
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Período:</label>
         <select id="deletePeriod" onchange="updateDeleteList()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
           <option value="day">Ventas del Día</option>
-          <option value="month">Ventas del Mes</option>
+          <option value="cycle">Ventas del Ciclo</option>
           <option value="permanent">Historial Permanente</option>
         </select>
         
@@ -1407,8 +1435,7 @@
     const COMMISSION_RATE = 0.009;
     let deferredPrompt = null;
     let dailyChartInstance = null;
-    let monthlyChartInstance = null;
-    let hourlyChartInstance = null;
+    let cycleHistoryChartInstance = null;
     
     // Variables para el archivo CSV
     let selectedFile = null;
@@ -2169,7 +2196,7 @@
       showToast(`📤 ${prospects.length} prospectos exportados`);
     }
 
-    // ==================== FUNCIONES EXISTENTES (SIN CAMBIOS) ====================
+    // ==================== FUNCIONES EXISTENTES (CON MODIFICACIONES) ====================
     function showUploadModal() {
       showModal('uploadModal');
       resetUploadForm();
@@ -2387,22 +2414,22 @@
       }
 
       const permanentSales = getStorage('ventas_permanentes');
-      const salesMonth = getStorage('ventas_mes');
+      const salesCycle = getStorage('ventas_ciclo');
       const salesDay = getStorage('ventas_dia');
       const today = getCurrentDate();
       const currentMonth = getCurrentMonth();
       
       // Asegurar arrays
       if (!Array.isArray(permanentSales)) setStorage('ventas_permanentes', []);
-      if (!Array.isArray(salesMonth)) setStorage('ventas_mes', []);
+      if (!Array.isArray(salesCycle)) setStorage('ventas_ciclo', []);
       if (!Array.isArray(salesDay)) setStorage('ventas_dia', []);
       
       const permArr = getStorage('ventas_permanentes');
-      const monthArr = getStorage('ventas_mes');
+      const cycleArr = getStorage('ventas_ciclo');
       const dayArr = getStorage('ventas_dia');
 
       let addedToPermanent = 0;
-      let addedToMonth = 0;
+      let addedToCycle = 0;
       let addedToDay = 0;
       let duplicates = 0;
 
@@ -2428,10 +2455,11 @@
           permArr.push(sale);
           addedToPermanent++;
 
-          // Agregar a ventas del mes si es del mes actual
-          if (row.month_id === currentMonth) {
-            monthArr.push(sale);
-            addedToMonth++;
+          // Agregar a ventas del ciclo si es del ciclo actual
+          const lastCycleEnd = getStorage('ultimo_ciclo_fin');
+          if (!lastCycleEnd || new Date(sale.date_iso) >= new Date(lastCycleEnd)) {
+            cycleArr.push(sale);
+            addedToCycle++;
           }
 
           // Agregar a ventas del día si es del día actual
@@ -2446,7 +2474,7 @@
 
       // Guardar cambios
       setStorage('ventas_permanentes', permArr);
-      setStorage('ventas_mes', monthArr);
+      setStorage('ventas_ciclo', cycleArr);
       setStorage('ventas_dia', dayArr);
 
       // Mostrar resumen
@@ -2455,8 +2483,8 @@
       message += `• Nuevos registros agregados: ${addedToPermanent}\n`;
       message += `• Duplicados omitidos: ${duplicates}\n`;
       
-      if (addedToMonth > 0) {
-        message += `• Agregados al mes actual: ${addedToMonth}\n`;
+      if (addedToCycle > 0) {
+        message += `• Agregados al ciclo actual: ${addedToCycle}\n`;
       }
       
       if (addedToDay > 0) {
@@ -2469,32 +2497,46 @@
       showToast(`✅ ${addedToPermanent} ventas importadas correctamente`);
     }
 
-    // ==================== CÁLCULO DE KPIs ==================== (continúa...)
+    // ==================== CÁLCULO DE KPIs MODIFICADO ====================
     function calculateAndDisplayKPIs() {
       const permanentSales = getStorage('ventas_permanentes');
       const today = getCurrentDate();
-      const currentMonth = getCurrentMonth();
       
       const startOfWeek = getStartOfWeek();
+      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
       
+      // Ventas del día
       const daySales = permanentSales.filter(s => s.date_iso === today);
-      const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
-      const monthSales = permanentSales.filter(s => s.month_id === currentMonth);
       
+      // Ventas de la semana
+      const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
+      
+      // Ventas del ciclo actual (desde último cierre hasta hoy)
+      let cycleSales = [];
+      if (lastCycleEnd) {
+        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd));
+      } else {
+        // Si no hay cierre anterior, todas las ventas son del ciclo actual
+        cycleSales = permanentSales;
+      }
+      
+      // Cálculos diarios
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
       const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
       
+      // Cálculos semanales
       const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const weekCount = weekSales.length;
       const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
       const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
       
-      const monthTotal = Math.round(monthSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const monthCount = monthSales.length;
-      const monthAverage = monthCount > 0 ? Math.round(monthTotal / monthCount) : 0;
-      const monthCommission = Math.round(monthSales.reduce((sum, s) => sum + s.commission, 0));
+      // Cálculos del ciclo
+      const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCount = cycleSales.length;
+      const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
+      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
       
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
       document.getElementById('kpiDayCount').textContent = dayCount;
@@ -2506,13 +2548,10 @@
       document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
       document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
       
-      document.getElementById('kpiMonthTotal').textContent = formatCLP(monthTotal);
-      document.getElementById('kpiMonthCount').textContent = monthCount;
-      document.getElementById('kpiMonthAverage').textContent = formatCLP(monthAverage);
-      document.getElementById('kpiMonthCommission').textContent = formatCLP(monthCommission);
-      
-      // MODIFICADO: Ahora pasamos todas las ventas permanentes para el gráfico por hora
-      renderHourlyChart(permanentSales);
+      document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
+      document.getElementById('kpiCycleCount').textContent = cycleCount;
+      document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
+      document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
     }
 
     // ==================== FUNCIONES AUXILIARES PARA KPIs ====================
@@ -2535,130 +2574,96 @@
       return date >= start && date <= end;
     }
 
-    // ==================== GRÁFICO DE VENTAS POR HORA MODIFICADO ==================== (continúa...)
-    function renderHourlyChart(allSales) {
-      // Crear un array para las horas de 8:00 a 20:00
-      const hourlyData = {};
+    // ==================== FUNCIONES DE GESTIÓN DE CICLOS ====================
+    function showCloseCycleModal() {
+      // Obtener ventas del ciclo actual
+      const permanentSales = getStorage('ventas_permanentes');
+      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
       
-      // Inicializar todas las horas de 8 a 20 con valor 0
-      for (let h = 8; h <= 20; h++) {
-        const hourLabel = `${h.toString().padStart(2, '0')}:00`;
-        hourlyData[hourLabel] = 0;
+      let cycleSales = [];
+      if (lastCycleEnd) {
+        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd));
+      } else {
+        cycleSales = permanentSales;
       }
       
-      // Procesar todas las ventas
-      allSales.forEach(sale => {
-        const saleDate = new Date(sale.timestamp);
-        const hour = saleDate.getHours();
-        
-        // Solo considerar ventas entre las 8:00 y 20:00
-        if (hour >= 8 && hour <= 20) {
-          const hourLabel = `${hour.toString().padStart(2, '0')}:00`;
-          hourlyData[hourLabel] = (hourlyData[hourLabel] || 0) + sale.net_without_vat;
-        }
-      });
+      // Calcular resumen del ciclo
+      const cycleWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleCount = cycleSales.length;
       
-      // Ordenar las horas
-      const hours = Object.keys(hourlyData).sort((a, b) => {
-        const hourA = parseInt(a.split(':')[0]);
-        const hourB = parseInt(b.split(':')[0]);
-        return hourA - hourB;
-      });
+      // Establecer fecha por defecto (hoy)
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('cycleCloseDate').value = today;
       
-      // Obtener valores redondeados
-      const values = hours.map(hour => Math.round(hourlyData[hour]));
+      // Mostrar resumen
+      document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
+      document.getElementById('cycleSummaryWithoutVat').textContent = formatCLP(cycleWithoutVat);
+      document.getElementById('cycleSummaryCommission').textContent = formatCLP(cycleCommission);
+      document.getElementById('cycleSummaryCount').textContent = cycleCount;
       
-      // Si no hay datos en ninguna hora, mostrar un mensaje
-      const hasData = values.some(v => v > 0);
+      showModal('closeCycleModal');
+    }
+    
+    function confirmCloseCycle() {
+      const closeDate = document.getElementById('cycleCloseDate').value;
       
-      if (!hasData) {
-        hours.length = 0;
-        values.length = 0;
-        
-        // Mostrar todas las horas con valor 0
-        for (let h = 8; h <= 20; h++) {
-          hours.push(`${h.toString().padStart(2, '0')}:00`);
-          values.push(0);
-        }
+      if (!closeDate) {
+        alert('Por favor selecciona una fecha de cierre.');
+        return;
       }
       
-      const ctx = document.getElementById('hourlyChart');
-      if (hourlyChartInstance) {
-        hourlyChartInstance.destroy();
+      // Obtener ventas del ciclo actual
+      const permanentSales = getStorage('ventas_permanentes');
+      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
+      
+      let cycleSales = [];
+      if (lastCycleEnd) {
+        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd) && new Date(s.date_iso) <= new Date(closeDate));
+      } else {
+        cycleSales = permanentSales.filter(s => new Date(s.date_iso) <= new Date(closeDate));
       }
       
-      hourlyChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: hours,
-          datasets: [{
-            label: 'Volumen de Ventas (sin IVA)',
-            data: values,
-            backgroundColor: '#f7c600',
-            borderColor: '#d1a400',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return formatCLP(context.parsed.y);
-                },
-                title: function(tooltipItems) {
-                  return `Hora: ${tooltipItems[0].label}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              title: {
-                display: true,
-                text: 'Monto ($)',
-                color: '#999999',
-                font: {
-                  size: 12
-                }
-              },
-              ticks: {
-                callback: function(value) {
-                  return formatCLP(value);
-                },
-                color: '#999999'
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Hora del día',
-                color: '#999999',
-                font: {
-                  size: 12
-                }
-              },
-              ticks: {
-                color: '#999999',
-                maxRotation: 45,
-                minRotation: 45
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            }
-          }
-        }
-      });
+      // Calcular resumen del ciclo a cerrar
+      const cycleWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleCount = cycleSales.length;
+      
+      // Guardar historial de cierre
+      const cycleHistory = getStorage('historial_ciclos');
+      const newCycleRecord = {
+        fecha_cierre: closeDate,
+        fecha_inicio: lastCycleEnd || getStorage('primer_venta_fecha') || closeDate,
+        ventas_cantidad: cycleCount,
+        total_con_iva: cycleWithVat,
+        total_sin_iva: cycleWithoutVat,
+        comision_total: cycleCommission,
+        fecha_registro: new Date().toISOString()
+      };
+      
+      cycleHistory.push(newCycleRecord);
+      setStorage('historial_ciclos', cycleHistory);
+      
+      // Actualizar fecha del último cierre
+      setStorage('ultimo_ciclo_fin', closeDate);
+      
+      // Vaciar ventas del ciclo actual (las nuevas ventas se acumularán para el próximo ciclo)
+      setStorage('ventas_ciclo', []);
+      
+      // Mostrar mensaje de confirmación
+      let message = `✅ Ciclo cerrado correctamente:\n\n`;
+      message += `• Fecha de cierre: ${formatDateForExcel(closeDate)}\n`;
+      message += `• Ventas en el ciclo: ${cycleCount}\n`;
+      message += `• Total con IVA: ${formatCLP(cycleWithVat)}\n`;
+      message += `• Comisión total: ${formatCLP(cycleCommission)}\n`;
+      message += `\nA partir de mañana, las nuevas ventas se acumularán para el próximo ciclo.`;
+      
+      alert(message);
+      hideModal('closeCycleModal');
+      refreshUI();
+      showToast(`📅 Ciclo cerrado - Comisión: ${formatCLP(cycleCommission)}`);
     }
 
     // ==================== FUNCIONES EXISTENTES (SIN CAMBIOS) ====================
@@ -2793,11 +2798,6 @@
       return now.toISOString().split('T')[0];
     }
 
-    function getCurrentMonth() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    }
-
     function round2(x) {
       // MODIFICADO: Redondear a número entero
       return Math.round(x);
@@ -2826,9 +2826,9 @@
         permanentSales.push(sale);
         setStorage('ventas_permanentes', permanentSales);
 
-        const salesMonth = getStorage('ventas_mes');
-        salesMonth.push(sale);
-        setStorage('ventas_mes', salesMonth);
+        const salesCycle = getStorage('ventas_ciclo');
+        salesCycle.push(sale);
+        setStorage('ventas_ciclo', salesCycle);
 
         const salesDay = getStorage('ventas_dia');
         salesDay.push(sale);
@@ -2842,6 +2842,11 @@
       } catch (e) {
         alert(e.message);
       }
+    }
+
+    function getCurrentMonth() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
     function deleteLastSale() {
@@ -2872,14 +2877,14 @@
       salesDay.pop();
       setStorage('ventas_dia', salesDay);
       
-      const salesMonth = getStorage('ventas_mes');
-      const monthIndex = salesMonth.findIndex(s => 
+      const salesCycle = getStorage('ventas_ciclo');
+      const cycleIndex = salesCycle.findIndex(s => 
         s.timestamp === lastSale.timestamp && 
         s.amount_with_vat === lastSale.amount_with_vat
       );
-      if (monthIndex !== -1) {
-        salesMonth.splice(monthIndex, 1);
-        setStorage('ventas_mes', salesMonth);
+      if (cycleIndex !== -1) {
+        salesCycle.splice(cycleIndex, 1);
+        setStorage('ventas_ciclo', salesCycle);
       }
       
       refreshUI();
@@ -2913,20 +2918,15 @@
       showToast('✓ Día cerrado. Ventas del día vaciadas.');
     }
 
-    function closeMonth() {
-      setStorage('ventas_dia', []);
-      setStorage('ventas_mes', []);
-      refreshUI();
-      showToast('✓ Mes cerrado. Ventas del día y del mes vaciadas.');
-    }
-
     function resetAll() {
       if (!confirm('⚠️ ¿Estás COMPLETAMENTE SEGURO? Se borrarán TODOS los datos de forma PERMANENTE.')) {
         return;
       }
       setStorage('ventas_dia', []);
-      setStorage('ventas_mes', []);
+      setStorage('ventas_ciclo', []);
       setStorage('ventas_permanentes', []);
+      setStorage('historial_ciclos', []);
+      localStorage.removeItem('ultimo_ciclo_fin');
       refreshUI();
       showToast('Sistema reseteado');
     }
@@ -2958,20 +2958,18 @@
           option.textContent = 'No hay ventas hoy';
           dateSelect.appendChild(option);
         }
-      } else if (exportType === 'month') {
+      } else if (exportType === 'cycle') {
         dateSelector.style.display = 'block';
-        const salesMonth = getStorage('ventas_mes');
-        const currentMonth = getCurrentMonth();
-        const currentSales = salesMonth.filter(s => s.month_id === currentMonth);
+        const salesCycle = getStorage('ventas_ciclo');
         
-        if (currentSales.length > 0) {
+        if (salesCycle.length > 0) {
           const option = document.createElement('option');
-          option.value = currentMonth;
-          option.textContent = `${currentMonth} (Mes actual - ${currentSales.length} ventas)`; 
+          option.value = 'current';
+          option.textContent = `Ciclo actual (${salesCycle.length} ventas)`; 
           dateSelect.appendChild(option);
         } else {
           const option = document.createElement('option');
-          option.textContent = 'No hay ventas en el mes actual';
+          option.textContent = 'No hay ventas en el ciclo actual';
           dateSelect.appendChild(option);
         }
       } else if (exportType === 'permanent') {
@@ -2998,6 +2996,27 @@
           option.textContent = 'No hay ventas en historial permanente';
           dateSelect.appendChild(option);
         }
+      } else if (exportType === 'cycleHistory') {
+        dateSelector.style.display = 'block';
+        const cycleHistory = getStorage('historial_ciclos');
+        
+        if (cycleHistory.length > 0) {
+          const allOption = document.createElement('option');
+          allOption.value = 'all';
+          allOption.textContent = 'Todos los cierres';
+          dateSelect.appendChild(allOption);
+          
+          cycleHistory.reverse().forEach((cycle, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `Cierre ${formatDateForExcel(cycle.fecha_cierre)} - ${formatCLP(cycle.comision_total)}`;
+            dateSelect.appendChild(option);
+          });
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay historial de cierres';
+          dateSelect.appendChild(option);
+        }
       } else {
         dateSelector.style.display = 'none';
       }
@@ -3019,13 +3038,12 @@
           data = salesDay;
           filename = `ventas_dia_${selectedDate}.csv`;
         }
-      } else if (exportType === 'month') {
-        const currentMonth = getCurrentMonth();
-        const salesMonth = getStorage('ventas_mes');
+      } else if (exportType === 'cycle') {
+        const salesCycle = getStorage('ventas_ciclo');
         
-        if (selectedDate === currentMonth) {
-          data = salesMonth.filter(s => s.month_id === currentMonth);
-          filename = `ventas_mes_${selectedDate}.csv`;
+        if (selectedDate === 'current') {
+          data = salesCycle;
+          filename = `ventas_ciclo_actual_${getCurrentDate()}.csv`;
         }
       } else if (exportType === 'permanent') {
         const permanentSales = getStorage('ventas_permanentes');
@@ -3037,6 +3055,19 @@
           data = permanentSales.filter(s => s.month_id === selectedDate);
           filename = `historial_permanente_${selectedDate}.csv`;
         }
+      } else if (exportType === 'cycleHistory') {
+        const cycleHistory = getStorage('historial_ciclos');
+        
+        if (selectedDate === 'all') {
+          data = cycleHistory;
+          filename = 'historial_ciclos_completo.csv';
+        } else {
+          const index = parseInt(selectedDate);
+          if (!isNaN(index) && index >= 0 && index < cycleHistory.length) {
+            data = [cycleHistory[index]];
+            filename = `cierre_ciclo_${formatDateForExcel(data[0].fecha_cierre)}.csv`;
+          }
+        }
       }
       
       if (data.length === 0) {
@@ -3044,12 +3075,22 @@
         return;
       }
       
-      let csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes\n';
-      data.forEach(s => {
-        const timestamp = formatDateTimeForExcel(s.timestamp);
-        const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
-        csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}"\n`;
-      });
+      let csv = '';
+      if (exportType === 'cycleHistory') {
+        // Exportar historial de cierres
+        csv = 'Fecha Cierre,Fecha Inicio,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total,Fecha Registro\n';
+        data.forEach(c => {
+          csv += `"${formatDateForExcel(c.fecha_cierre)}","${formatDateForExcel(c.fecha_inicio)}",${c.ventas_cantidad},${c.total_con_iva},${c.total_sin_iva},${c.comision_total},"${formatDateTimeForExcel(c.fecha_registro)}"\n`;
+        });
+      } else {
+        // Exportar ventas
+        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes\n';
+        data.forEach(s => {
+          const timestamp = formatDateTimeForExcel(s.timestamp);
+          const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
+          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}"\n`;
+        });
+      }
       
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
@@ -3100,10 +3141,8 @@
       let sales = [];
       if (period === 'day') {
         sales = getStorage('ventas_dia');
-      } else if (period === 'month') {
-        const currentMonth = getCurrentMonth();
-        const allSales = getStorage('ventas_mes');
-        sales = allSales.filter(s => s.month_id === currentMonth);
+      } else if (period === 'cycle') {
+        sales = getStorage('ventas_ciclo');
       } else if (period === 'permanent') {
         sales = getStorage('ventas_permanentes');
       }
@@ -3219,21 +3258,19 @@
         salesDay.splice(index, 1);
         setStorage('ventas_dia', salesDay);
         
-        const salesMonth = getStorage('ventas_mes');
-        const monthIndex = salesMonth.findIndex(s => 
+        const salesCycle = getStorage('ventas_ciclo');
+        const cycleIndex = salesCycle.findIndex(s => 
           s.timestamp === saleToDelete.timestamp && 
           s.amount_with_vat === saleToDelete.amount_with_vat
         );
-        if (monthIndex !== -1) {
-          salesMonth.splice(monthIndex, 1);
-          setStorage('ventas_mes', salesMonth);
+        if (cycleIndex !== -1) {
+          salesCycle.splice(cycleIndex, 1);
+          setStorage('ventas_ciclo', salesCycle);
         }
         
-      } else if (period === 'month') {
-        const currentMonth = getCurrentMonth();
-        const salesMonth = getStorage('ventas_mes');
-        const monthSales = salesMonth.filter(s => s.month_id === currentMonth);
-        saleToDelete = monthSales[index];
+      } else if (period === 'cycle') {
+        const salesCycle = getStorage('ventas_ciclo');
+        saleToDelete = salesCycle[index];
         
         const permanentSales = getStorage('ventas_permanentes');
         const permIndex = permanentSales.findIndex(s => 
@@ -3245,14 +3282,8 @@
           setStorage('ventas_permanentes', permanentSales);
         }
         
-        const fullIndex = salesMonth.findIndex(s => 
-          s.timestamp === saleToDelete.timestamp && 
-          s.amount_with_vat === saleToDelete.amount_with_vat
-        );
-        if (fullIndex !== -1) {
-          salesMonth.splice(fullIndex, 1);
-          setStorage('ventas_mes', salesMonth);
-        }
+        salesCycle.splice(index, 1);
+        setStorage('ventas_ciclo', salesCycle);
         
         const today = getCurrentDate();
         if (saleToDelete.date_iso === today) {
@@ -3274,16 +3305,17 @@
         permanentSales.splice(index, 1);
         setStorage('ventas_permanentes', permanentSales);
         
-        const currentMonth = getCurrentMonth();
-        if (saleToDelete.month_id === currentMonth) {
-          const salesMonth = getStorage('ventas_mes');
-          const monthIndex = salesMonth.findIndex(s => 
+        // Verificar si está en el ciclo actual
+        const lastCycleEnd = getStorage('ultimo_ciclo_fin');
+        if (!lastCycleEnd || new Date(saleToDelete.date_iso) > new Date(lastCycleEnd)) {
+          const salesCycle = getStorage('ventas_ciclo');
+          const cycleIndex = salesCycle.findIndex(s => 
             s.timestamp === saleToDelete.timestamp && 
             s.amount_with_vat === saleToDelete.amount_with_vat
           );
-          if (monthIndex !== -1) {
-            salesMonth.splice(monthIndex, 1);
-            setStorage('ventas_mes', salesMonth);
+          if (cycleIndex !== -1) {
+            salesCycle.splice(cycleIndex, 1);
+            setStorage('ventas_ciclo', salesCycle);
           }
         }
         
@@ -3348,11 +3380,12 @@
           permanentSales.push(sale);
           setStorage('ventas_permanentes', permanentSales);
           
-          const currentMonth = getCurrentMonth();
-          if (dateInput.substring(0, 7) === currentMonth) {
-            const salesMonth = getStorage('ventas_mes');
-            salesMonth.push(sale);
-            setStorage('ventas_mes', salesMonth);
+          // Agregar al ciclo si es posterior al último cierre
+          const lastCycleEnd = getStorage('ultimo_ciclo_fin');
+          if (!lastCycleEnd || new Date(dateInput) > new Date(lastCycleEnd)) {
+            const salesCycle = getStorage('ventas_ciclo');
+            salesCycle.push(sale);
+            setStorage('ventas_ciclo', salesCycle);
           }
           
           const today = getCurrentDate();
@@ -3373,28 +3406,26 @@
 
     function refreshUI() {
       const salesDay = getStorage('ventas_dia');
-      const salesMonth = getStorage('ventas_mes');
-      const currentMonth = getCurrentMonth();
-      const salesCurrentMonth = salesMonth.filter(s => s.month_id === currentMonth);
+      const salesCycle = getStorage('ventas_ciclo');
 
       // MODIFICADO: Redondear todos los cálculos a enteros
       const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
       const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
       const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + s.commission, 0));
 
-      const monthWithVat = Math.round(salesCurrentMonth.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const monthWithoutVat = Math.round(salesCurrentMonth.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const monthCommission = Math.round(salesCurrentMonth.reduce((sum, s) => sum + s.commission, 0));
+      const cycleWithVat = Math.round(salesCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(salesCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(salesCycle.reduce((sum, s) => sum + s.commission, 0));
 
       document.getElementById('dayWithVat').textContent = formatCLP(dayWithVat);
       document.getElementById('dayWithoutVat').textContent = formatCLP(dayWithoutVat);
       document.getElementById('dayCommission').textContent = formatCLP(dayCommission);
-      document.getElementById('monthWithVat').textContent = formatCLP(monthWithVat);
-      document.getElementById('monthWithoutVat').textContent = formatCLP(monthWithoutVat);
-      document.getElementById('monthCommission').textContent = formatCLP(monthCommission);
+      document.getElementById('cycleWithVat').textContent = formatCLP(cycleWithVat);
+      document.getElementById('cycleWithoutVat').textContent = formatCLP(cycleWithoutVat);
+      document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
 
       renderSalesList('salesDay', salesDay.slice(-20).reverse());
-      renderSalesList('salesMonth', salesCurrentMonth.slice(-20).reverse());
+      renderSalesList('salesCycle', salesCycle.slice(-20).reverse());
 
       renderCharts();
     }
@@ -3423,10 +3454,6 @@
       showModal('closeDayModal');
     }
 
-    function showCloseMonthModal() {
-      showModal('closeMonthModal');
-    }
-
     function showResetModal() {
       showModal('resetModal');
     }
@@ -3441,11 +3468,6 @@
       hideModal('closeDayModal');
     }
 
-    function confirmCloseMonth() {
-      closeMonth();
-      hideModal('closeMonthModal');
-    }
-
     function confirmReset() {
       resetAll();
       hideModal('resetModal');
@@ -3453,18 +3475,17 @@
 
     function renderCharts() {
       renderDailyChart();
-      renderMonthlyChart();
+      renderCycleHistoryChart();
     }
 
     function renderDailyChart() {
-      const currentMonth = getCurrentMonth();
-      const salesMonth = getStorage('ventas_mes');
-      const salesCurrentMonth = salesMonth.filter(s => s.month_id === currentMonth);
+      const salesCycle = getStorage('ventas_ciclo');
       
+      // Agrupar por día del ciclo actual
       const dataMap = {};
       
-      salesCurrentMonth.forEach(s => {
-        const day = parseInt(s.date_iso.split('-')[2]);
+      salesCycle.forEach(s => {
+        const day = new Date(s.date_iso).getDate();
         dataMap[day] = (dataMap[day] || 0) + s.commission;
       });
 
@@ -3534,27 +3555,59 @@
       });
     }
 
-    function renderMonthlyChart() {
-      const salesMonth = getStorage('ventas_mes');
-      const currentMonth = getCurrentMonth();
-      const currentCommission = Math.round(salesMonth.filter(s => s.month_id === currentMonth).reduce((sum, s) => sum + s.commission, 0)); // Entero
-
-      const monthNames = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
-      const currentMonthNum = parseInt(currentMonth.split('-')[1]);
-      const labels = [monthNames[currentMonthNum - 1]];
-      const values = [currentCommission];
-
-      const ctx = document.getElementById('monthlyChart');
-      if (monthlyChartInstance) {
-        monthlyChartInstance.destroy();
+    function renderCycleHistoryChart() {
+      const cycleHistory = getStorage('historial_ciclos');
+      
+      if (cycleHistory.length === 0) {
+        const ctx = document.getElementById('cycleHistoryChart');
+        if (cycleHistoryChartInstance) {
+          cycleHistoryChartInstance.destroy();
+        }
+        
+        cycleHistoryChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Sin historial'],
+            datasets: [{
+              label: 'Comisión',
+              data: [0],
+              backgroundColor: '#111111',
+              borderColor: '#444444',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        });
+        return;
+      }
+      
+      // Ordenar por fecha (más reciente primero para gráfico)
+      const sortedHistory = [...cycleHistory].sort((a, b) => 
+        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
+      ).slice(0, 10).reverse(); // Mostrar últimos 10 cierres
+      
+      const labels = sortedHistory.map(c => formatDateForExcel(c.fecha_cierre));
+      const values = sortedHistory.map(c => Math.round(c.comision_total));
+      
+      const ctx = document.getElementById('cycleHistoryChart');
+      if (cycleHistoryChartInstance) {
+        cycleHistoryChartInstance.destroy();
       }
 
-      monthlyChartInstance = new Chart(ctx, {
+      cycleHistoryChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
           datasets: [{
-            label: 'Comisión',
+            label: 'Comisión por ciclo',
             data: values,
             backgroundColor: '#111111',
             borderColor: '#444444',
@@ -3591,7 +3644,9 @@
             },
             x: {
               ticks: {
-                color: '#999999'
+                color: '#999999',
+                maxRotation: 45,
+                minRotation: 45
               },
               grid: {
                 color: '#2a2a2a'
@@ -3647,6 +3702,10 @@
       // Cargar nombre del vendedor al iniciar
       actualizarNombreVendedor();
       
+      // Inicializar storage si no existe
+      if (!getStorage('ventas_ciclo').length) setStorage('ventas_ciclo', []);
+      if (!getStorage('historial_ciclos').length) setStorage('historial_ciclos', []);
+      
       refreshUI();
       // Inicializar estadísticas de prospectos si estamos en la pantalla de CRM
       updateProspectStats();
@@ -3677,22 +3736,17 @@
     }
 
     // ==================== ENSURE INLINE ONCLICK HANDLERS WORK ====================
-    // Algunos entornos pueden ejecutar este script en un scope no-global (por ejemplo, si se cambia a type="module").
-    // Para evitar que los handlers inline (onclick="...") no encuentren las funciones, nos aseguramos de exponer
-    // las funciones más importantes en window.
     (function exposeApiToWindow() {
       const apiNames = [
-        'showMainScreen','showAnalysisScreen','showCRMScreen','showUploadModal','showModifyModal','showCloseDayModal','showCloseMonthModal',
+        'showMainScreen','showAnalysisScreen','showCRMScreen','showUploadModal','showModifyModal','showCloseDayModal','showCloseCycleModal',
         'showResetModal','showExportModal','addSale','deleteLastSale','saveProspect','showAddProspectModal','showImportClientModal',
-        'processClientFile','exportProspects','guardarNombreVendedor','openWhatsApp','callProspect','confirmCloseDay','confirmCloseMonth',
+        'processClientFile','exportProspects','guardarNombreVendedor','openWhatsApp','callProspect','confirmCloseDay','confirmCloseCycle',
         'confirmReset','confirmExport','confirmModify','saveProspectChanges','confirmDeleteProspect','showProspectDetail','filterProspects',
         'resetFilters','handleFileSelect','handleClientFileSelect','processCSVFile','processClientFile','hideModal','showModal'
       ];
       apiNames.forEach(name => {
         try {
-          // Si ya está en window, no hacemos nada.
           if (typeof window[name] === 'function') return;
-          // Evaluar y asignar si existe una función declarada con ese nombre en este scope.
           const fn = (typeof eval(name) === 'function') ? eval(name) : undefined;
           if (typeof fn === 'function') window[name] = fn;
         } catch (e) {
@@ -3704,7 +3758,6 @@
     // Registro de errores para ayudar a diagnosticar problemas cuando algo no responde.
     window.addEventListener('error', (evt) => {
       console.error('Unhandled JS error:', evt.message, 'at', evt.filename + ':' + evt.lineno);
-      // No mostramos alert aquí para no molestar al usuario, solo logueamos.
     });
   </script>
 </body>
