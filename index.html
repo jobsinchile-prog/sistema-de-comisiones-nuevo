@@ -3225,8 +3225,17 @@
     }
 
     function showCloseCycleModal() {
-      showModal('closeCycleModal');
-      updateCycleSummary();
+  showModal('closeCycleModal');
+  updateCycleSummary();
+  
+  const cycleCloseDate = document.getElementById('cycleCloseDate');
+  if (cycleCloseDate) {
+    // Solo establecer la fecha actual como valor por defecto
+    const today = new Date().toISOString().split('T')[0];
+    cycleCloseDate.value = today;
+    // No establecer restricciones de fecha mínima o máxima
+  }
+}
     }
 
     function showResetModal() {
