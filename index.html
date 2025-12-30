@@ -1319,6 +1319,96 @@
     let clientFileData = [];
     let clientFileHeaders = [];
 
+    // ============================================
+    // FUNCIONES CRÍTICAS CORREGIDAS - LOGICA DE CICLOS
+    // ============================================
+
+    /**
+     * Obtiene el ciclo correcto para una fecha específica
+     * BASADO EN: fecha_venta <= fecha_cierre -> Ciclo 1
+     *            fecha_venta > fecha_cierre -> Ciclo 2
+     */
+    function getCycleFromDate(dateString) {
+      const date = new Date(dateString);
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      
+      if (!lastClose) {
+        return 'C1'; // Primer ciclo (no hay cierres anteriores)
+      }
+      
+      const lastCloseDate = new Date(lastClose);
+      lastCloseDate.setHours(23, 59, 59, 999); // Fin del día de cierre
+      
+      // CORRECCIÓN: Si la fecha de venta es <= fecha_cierre, va en C1
+      // Si es > fecha_cierre, va en C2
+      if (date <= lastCloseDate) {
+        return 'C1';
+      } else {
+        return 'C2';
+      }
+    }
+
+    /**
+     * Determina el ciclo actual basado en la fecha de hoy vs último cierre
+     */
+    function getCurrentCycle() {
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      if (!lastClose) return 'C1';
+      
+      const today = new Date();
+      const lastCloseDate = new Date(lastClose);
+      lastCloseDate.setHours(23, 59, 59, 999);
+      
+      return today <= lastCloseDate ? 'C1' : 'C2';
+    }
+
+    /**
+     * Obtiene todas las ventas del ciclo actual (posteriores al último cierre)
+     */
+    function getCurrentCycleSales() {
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      const permanentSales = getStorage('ventas_permanentes');
+      
+      if (!lastClose) {
+        // Si no hay cierre previo, todas las ventas están en C1
+        return permanentSales;
+      }
+      
+      const lastCloseDate = new Date(lastClose);
+      lastCloseDate.setHours(23, 59, 59, 999);
+      
+      // Solo ventas POSTERIORES al último cierre
+      return permanentSales.filter(sale => {
+        const saleDate = new Date(sale.date_iso);
+        return saleDate > lastCloseDate;
+      });
+    }
+
+    /**
+     * Obtiene las ventas del ciclo anterior (hasta el último cierre inclusive)
+     */
+    function getPreviousCycleSales() {
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      const permanentSales = getStorage('ventas_permanentes');
+      
+      if (!lastClose) {
+        return []; // No hay ciclo anterior
+      }
+      
+      const lastCloseDate = new Date(lastClose);
+      lastCloseDate.setHours(23, 59, 59, 999);
+      
+      // Ventas hasta el día de cierre inclusive
+      return permanentSales.filter(sale => {
+        const saleDate = new Date(sale.date_iso);
+        return saleDate <= lastCloseDate;
+      });
+    }
+
+    // ============================================
+    // FUNCIONES AUXILIARES GENERALES
+    // ============================================
+
     function showMainScreen() {
       document.getElementById('mainScreen').style.display = 'block';
       document.getElementById('analysisScreen').classList.remove('active');
@@ -1341,6 +1431,628 @@
       updateProspectStats();
       actualizarNombreVendedor();
     }
+
+    function getStorage(key) {
+      try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        console.error('Error reading storage:', e);
+        return [];
+      }
+    }
+
+    function setStorage(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch (e) {
+        console.error('Error saving storage:', e);
+        alert('Error al guardar datos. Verifica el espacio disponible.');
+        return false;
+      }
+    }
+
+    function formatCLP(amount) {
+      const num = Math.round(parseFloat(amount) || 0);
+      const sign = num < 0 ? '-' : '';
+      const abs = Math.abs(num);
+      return `${sign}$ ${abs.toLocaleString('es-CL')}`;
+    }
+
+    function getCurrentDate() {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    }
+
+    function parseAmount(str) {
+      if (!str) throw new Error('Introduce un número válido');
+      const cleaned = str.replace(/[^0-9]/g, '');
+      if (!cleaned) throw new Error('Introduce un número válido');
+      return parseFloat(cleaned);
+    }
+
+    function formatDateForExcel(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${day}/${month}/${year}`;
+    }
+
+    function formatDateTimeForExcel(isoString) {
+      if (!isoString) return '';
+      const date = new Date(isoString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+    // ============================================
+    // FUNCIONES DE VENTAS Y COMISIONES
+    // ============================================
+
+    function addSale() {
+      const input = document.getElementById('amountInput');
+      const amountText = input.value;
+      
+      try {
+        const amt = parseAmount(amountText);
+        const net = Math.round(amt / 1.19);
+        const commission = Math.round(net * COMMISSION_RATE);
+        
+        const sale = {
+          amount_with_vat: Math.round(amt),
+          net_without_vat: net,
+          commission: commission,
+          timestamp: new Date().toISOString(),
+          date_iso: getCurrentDate(),
+          month_id: getCurrentDate().substring(0, 7),
+          cycle_id: getCycleFromDate(getCurrentDate()) // Usa la lógica corregida
+        };
+
+        // Agregar a ventas permanentes
+        const permanentSales = getStorage('ventas_permanentes');
+        permanentSales.push(sale);
+        setStorage('ventas_permanentes', permanentSales);
+
+        // Agregar a ciclo actual si corresponde
+        if (getCurrentCycle() === sale.cycle_id) {
+          const salesCycle = getStorage('ventas_ciclo');
+          salesCycle.push(sale);
+          setStorage('ventas_ciclo', salesCycle);
+        }
+
+        // Agregar a ventas del día
+        const salesDay = getStorage('ventas_dia');
+        salesDay.push(sale);
+        setStorage('ventas_dia', salesDay);
+
+        if (input.value) {
+          input.value = '';
+          refreshUI();
+          showToast('✓ Venta agregada correctamente');
+        }
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    function deleteLastSale() {
+      const salesDay = getStorage('ventas_dia');
+      
+      if (salesDay.length === 0) {
+        alert('No hay ventas para eliminar');
+        return;
+      }
+      
+      const lastSale = salesDay[salesDay.length - 1];
+      const lastAmount = formatCLP(lastSale.amount_with_vat);
+      
+      if (!confirm(`¿Eliminar la última venta de ${lastAmount}?`)) {
+        return;
+      }
+      
+      // Eliminar de ventas permanentes
+      const permanentSales = getStorage('ventas_permanentes');
+      const permIndex = permanentSales.findIndex(s => 
+        s.timestamp === lastSale.timestamp && 
+        s.amount_with_vat === lastSale.amount_with_vat
+      );
+      if (permIndex !== -1) {
+        permanentSales.splice(permIndex, 1);
+        setStorage('ventas_permanentes', permanentSales);
+      }
+      
+      // Eliminar de ventas del día
+      salesDay.pop();
+      setStorage('ventas_dia', salesDay);
+      
+      // Eliminar de ciclo si corresponde
+      const salesCycle = getStorage('ventas_ciclo');
+      const cycleIndex = salesCycle.findIndex(s => 
+        s.timestamp === lastSale.timestamp && 
+        s.amount_with_vat === lastSale.amount_with_vat
+      );
+      if (cycleIndex !== -1) {
+        salesCycle.splice(cycleIndex, 1);
+        setStorage('ventas_ciclo', salesCycle);
+      }
+      
+      refreshUI();
+      showToast('✓ Última venta eliminada');
+    }
+
+    function refreshUI() {
+      const salesDay = getStorage('ventas_dia');
+      const currentCycleSales = getCurrentCycleSales(); // Usa función corregida
+      
+      const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + s.commission, 0));
+      
+      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      document.getElementById('dayWithVat').textContent = formatCLP(dayWithVat);
+      document.getElementById('dayWithoutVat').textContent = formatCLP(dayWithoutVat);
+      document.getElementById('dayCommission').textContent = formatCLP(dayCommission);
+      document.getElementById('cycleWithVat').textContent = formatCLP(cycleWithVat);
+      document.getElementById('cycleWithoutVat').textContent = formatCLP(cycleWithoutVat);
+      document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
+      
+      renderSalesList('salesDay', salesDay.slice(-20).reverse());
+      renderSalesList('salesCycle', currentCycleSales.slice(-20).reverse());
+      
+      updateCycleSummary();
+    }
+
+    function renderSalesList(elementId, sales) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      sales.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'sale-item';
+        const time = s.timestamp.substring(0, 16).replace('T', ' ');
+        div.textContent = `${i + 1}. ${formatCLP(s.amount_with_vat)} | Neto: ${formatCLP(s.net_without_vat)} | Com: ${formatCLP(s.commission)} | ${time}`;
+        container.appendChild(div);
+      });
+    }
+
+    // ============================================
+    // FUNCIONES DE CIERRE DE CICLO (CORREGIDAS)
+    // ============================================
+
+    function showCloseCycleModal() {
+      showModal('closeCycleModal');
+      updateCycleSummary();
+      
+      const cycleCloseDate = document.getElementById('cycleCloseDate');
+      if (cycleCloseDate) {
+        const today = new Date().toISOString().split('T')[0];
+        cycleCloseDate.value = today;
+      }
+    }
+
+    function updateCycleSummary() {
+      const currentCycleSales = getCurrentCycleSales();
+      
+      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleCount = currentCycleSales.length;
+      
+      document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
+      document.getElementById('cycleSummaryWithoutVat').textContent = formatCLP(cycleWithoutVat);
+      document.getElementById('cycleSummaryCommission').textContent = formatCLP(cycleCommission);
+      document.getElementById('cycleSummaryCount').textContent = cycleCount;
+    }
+
+    function confirmCloseCycle() {
+      const cycleDate = document.getElementById('cycleCloseDate').value;
+      if (!cycleDate) {
+        alert('Por favor selecciona una fecha de cierre');
+        return;
+      }
+      
+      // Guardar fecha de cierre
+      localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
+      
+      // Obtener ventas del ciclo que se está cerrando (hasta la fecha de cierre)
+      const cycleSales = getCurrentCycleSales().filter(sale => {
+        const saleDate = new Date(sale.date_iso);
+        const closeDate = new Date(cycleDate);
+        closeDate.setHours(23, 59, 59, 999);
+        return saleDate <= closeDate;
+      });
+      
+      // Guardar historial del ciclo
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const totalCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      cycleHistory.push({
+        fecha_cierre: cycleDate,
+        ciclo: getCurrentCycle(),
+        ventas_count: cycleSales.length,
+        total_with_vat: totalWithVat,
+        total_without_vat: totalWithoutVat,
+        comision_total: totalCommission
+      });
+      
+      setStorage('historial_ciclos', cycleHistory);
+      
+      // Limpiar ventas del ciclo actual (se recrearán con getCurrentCycleSales)
+      setStorage('ventas_ciclo', []);
+      
+      // Vaciar ventas del día
+      setStorage('ventas_dia', []);
+      
+      hideModal('closeCycleModal');
+      refreshUI();
+      showToast('✓ Ciclo cerrado correctamente');
+    }
+
+    function closeDay() {
+      setStorage('ventas_dia', []);
+      refreshUI();
+      showToast('✓ Día cerrado. Ventas del día vaciadas.');
+    }
+
+    // ============================================
+    // FUNCIONES DE IMPORTACIÓN CSV (CORREGIDAS)
+    // ============================================
+
+    function showUploadModal() {
+      showModal('uploadModal');
+      resetUploadForm();
+    }
+
+    function resetUploadForm() {
+      document.getElementById('csvFile').value = '';
+      document.getElementById('fileName').textContent = 'No se ha seleccionado ningún archivo';
+      document.getElementById('filePreview').style.display = 'none';
+      document.getElementById('uploadStats').style.display = 'none';
+      document.getElementById('processBtn').disabled = true;
+      selectedFile = null;
+      csvData = [];
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        resetUploadForm();
+        return;
+      }
+
+      selectedFile = file;
+      document.getElementById('fileName').textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+      document.getElementById('processBtn').disabled = false;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const content = e.target.result;
+          csvData = parseCSV(content);
+          
+          if (csvData.length === 0) {
+            alert('El archivo CSV está vacío o no tiene el formato correcto.');
+            resetUploadForm();
+            return;
+          }
+
+          showPreview(csvData);
+          showUploadStats(csvData);
+        } catch (error) {
+          alert('Error al leer el archivo CSV: ' + error.message);
+          resetUploadForm();
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseCSV(content) {
+      const lines = content.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length === 0) {
+        return [];
+      }
+
+      const firstLine = lines[0].toLowerCase();
+      const hasHeader = firstLine.includes('fecha/hora') || firstLine.includes('monto') || firstLine.includes('comisión');
+      
+      const startIndex = hasHeader ? 1 : 0;
+      const data = [];
+
+      for (let i = startIndex; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const cells = [];
+        let inQuotes = false;
+        let currentCell = '';
+        
+        for (let j = 0; j < line.length; j++) {
+          const char = line[j];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            cells.push(currentCell);
+            currentCell = '';
+          } else {
+            currentCell += char;
+          }
+        }
+        cells.push(currentCell);
+        
+        const cleanCells = cells.map(cell => cell.replace(/"/g, '').trim());
+        
+        if (cleanCells.length >= 6) {
+          const [fechaHoraStr, montoConIVARaw, netoSinIVARaw, comisionRaw, fechaStr, mesStr] = cleanCells;
+          
+          const timestamp = parseDateString(fechaHoraStr);
+          const dateIso = parseDateOnly(fechaStr);
+          const monthId = mesStr;
+          
+          const montoConIVA = Math.round(parseNumber(montoConIVARaw));
+          const netoSinIVA = Math.round(parseNumber(netoSinIVARaw));
+          const comision = Math.round(parseNumber(comisionRaw));
+          
+          if (timestamp && !isNaN(montoConIVA) && !isNaN(netoSinIVA) && !isNaN(comision) && dateIso && monthId) {
+            data.push({
+              fecha_hora: fechaHoraStr,
+              amount_with_vat: montoConIVA,
+              net_without_vat: netoSinIVA,
+              commission: comision,
+              fecha: fechaStr,
+              mes: mesStr,
+              timestamp: timestamp.toISOString(),
+              date_iso: dateIso,
+              month_id: monthId
+            });
+          }
+        }
+      }
+      
+      return data;
+    }
+
+    function parseDateString(dateStr) {
+      const parts = dateStr.split(' ');
+      if (parts.length !== 2) return new Date();
+      
+      const datePart = parts[0];
+      const timePart = parts[1];
+      
+      const dateParts = datePart.split('/');
+      if (dateParts.length !== 3) return new Date();
+      
+      const day = parseInt(dateParts[0]);
+      const month = parseInt(dateParts[1]) - 1;
+      const year = 2000 + parseInt(dateParts[2]);
+      
+      const timeParts = timePart.split(':');
+      const hours = timeParts.length >= 1 ? parseInt(timeParts[0]) : 0;
+      const minutes = timeParts.length >= 2 ? parseInt(timeParts[1]) : 0;
+      
+      return new Date(year, month, day, hours, minutes);
+    }
+
+    function parseDateOnly(dateStr) {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return '';
+      
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = '20' + parts[2];
+      
+      return `${year}-${month}-${day}`;
+    }
+
+    function parseNumber(numStr) {
+      const clean = numStr.replace(/\./g, '').replace(',', '.');
+      return parseFloat(clean) || 0;
+    }
+
+    function showPreview(data) {
+      const previewBody = document.getElementById('previewBody');
+      previewBody.innerHTML = '';
+      
+      const previewCount = Math.min(5, data.length);
+      
+      for (let i = 0; i < previewCount; i++) {
+        const row = data[i];
+        const tr = document.createElement('tr');
+        
+        tr.innerHTML = `
+          <td>${row.fecha_hora || ''}</td>
+          <td>${formatCLP(row.amount_with_vat)}</td>
+          <td>${formatCLP(row.net_without_vat)}</td>
+          <td>${formatCLP(row.commission)}</td>
+          <td>${row.fecha || ''}</td>
+          <td>${row.mes || ''}</td>
+        `;
+        
+        previewBody.appendChild(tr);
+      }
+      
+      document.getElementById('filePreview').style.display = 'block';
+    }
+
+    function showUploadStats(data) {
+      const totalRecords = data.length;
+      const permanentSales = getStorage('ventas_permanentes');
+      
+      let newRecords = 0;
+      data.forEach(row => {
+        const isDuplicate = permanentSales.some(sale => 
+          sale.timestamp === row.timestamp && 
+          sale.amount_with_vat === row.amount_with_vat
+        );
+        if (!isDuplicate) newRecords++;
+      });
+      
+      document.getElementById('totalRecords').textContent = totalRecords;
+      document.getElementById('newRecords').textContent = newRecords;
+      document.getElementById('importRecords').textContent = newRecords;
+      
+      document.getElementById('uploadStats').style.display = 'block';
+    }
+
+    function processCSVFile() {
+      if (!selectedFile || csvData.length === 0) {
+        alert('No hay archivo para procesar.');
+        return;
+      }
+
+      const permanentSales = getStorage('ventas_permanentes');
+      const today = getCurrentDate();
+      const currentCycle = getCurrentCycle();
+      
+      let addedToPermanent = 0;
+      let addedToCycle = 0;
+      let addedToDay = 0;
+      let duplicates = 0;
+
+      csvData.forEach(row => {
+        const isDuplicate = permanentSales.some(sale => 
+          sale.timestamp === row.timestamp && 
+          sale.amount_with_vat === row.amount_with_vat
+        );
+
+        if (!isDuplicate) {
+          // CORRECCIÓN: Usar getCycleFromDate() para determinar el ciclo
+          const cycleId = getCycleFromDate(row.date_iso);
+          
+          const sale = {
+            amount_with_vat: row.amount_with_vat,
+            net_without_vat: row.net_without_vat,
+            commission: row.commission,
+            timestamp: row.timestamp,
+            date_iso: row.date_iso,
+            month_id: row.month_id,
+            cycle_id: cycleId
+          };
+
+          permanentSales.push(sale);
+          addedToPermanent++;
+
+          // Agregar al ciclo actual si corresponde
+          if (cycleId === currentCycle) {
+            const salesCycle = getStorage('ventas_ciclo');
+            salesCycle.push(sale);
+            setStorage('ventas_ciclo', salesCycle);
+            addedToCycle++;
+          }
+
+          // Agregar a ventas del día si corresponde
+          if (row.date_iso === today) {
+            const salesDay = getStorage('ventas_dia');
+            salesDay.push(sale);
+            setStorage('ventas_dia', salesDay);
+            addedToDay++;
+          }
+        } else {
+          duplicates++;
+        }
+      });
+
+      setStorage('ventas_permanentes', permanentSales);
+
+      let message = `✅ Archivo procesado correctamente:\n\n`;
+      message += `• Registros en CSV: ${csvData.length}\n`;
+      message += `• Nuevos registros agregados: ${addedToPermanent}\n`;
+      message += `• Duplicados omitidos: ${duplicates}\n`;
+      
+      if (addedToCycle > 0) {
+        message += `• Agregados al ciclo actual: ${addedToCycle}\n`;
+      }
+      
+      if (addedToDay > 0) {
+        message += `• Agregados al día actual: ${addedToDay}\n`;
+      }
+
+      alert(message);
+      hideModal('uploadModal');
+      refreshUI();
+      showToast(`✅ ${addedToPermanent} ventas importadas correctamente`);
+    }
+
+    // ============================================
+    // FUNCIONES DE KPI Y ANÁLISIS
+    // ============================================
+
+    function calculateAndDisplayKPIs() {
+      const permanentSales = getStorage('ventas_permanentes');
+      const today = getCurrentDate();
+      const currentCycle = getCurrentCycle();
+      
+      const startOfWeek = getStartOfWeek();
+      
+      const daySales = permanentSales.filter(s => s.date_iso === today);
+      const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
+      const cycleSales = getCurrentCycleSales();
+      
+      const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const dayCount = daySales.length;
+      const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
+      const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
+      
+      const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const weekCount = weekSales.length;
+      const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
+      const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCount = cycleSales.length;
+      const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
+      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
+      document.getElementById('kpiDayCount').textContent = dayCount;
+      document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
+      document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
+      
+      document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
+      document.getElementById('kpiWeekCount').textContent = weekCount;
+      document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
+      document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
+      
+      document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
+      document.getElementById('kpiCycleCount').textContent = cycleCount;
+      document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
+      document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
+    }
+
+    function getStartOfWeek() {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      return startOfWeek.toISOString().split('T')[0];
+    }
+
+    function isDateInWeek(dateString, startOfWeek) {
+      const date = new Date(dateString);
+      const start = new Date(startOfWeek);
+      const end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      
+      return date >= start && date <= end;
+    }
+
+    // ============================================
+    // FUNCIONES CRM (SIN CAMBIOS)
+    // ============================================
 
     function getProspectsStorage() {
       try {
@@ -1793,6 +2505,480 @@
       }, 100);
     }
 
+    // ============================================
+    // FUNCIONES DE MODALES GENERALES
+    // ============================================
+
+    function showModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function hideModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function showCloseDayModal() {
+      showModal('closeDayModal');
+    }
+
+    function showResetModal() {
+      showModal('resetModal');
+    }
+
+    function showExportModal() {
+      showModal('exportModal');
+      updateExportOptions();
+    }
+
+    function showModifyModal() {
+      showModal('modifyModal');
+      document.getElementById('saleDate').value = getCurrentDate();
+      document.getElementById('saleAmount').value = '';
+      document.getElementById('searchQuery').value = '';
+      updateModifyAction();
+    }
+
+    function confirmCloseDay() {
+      closeDay();
+      hideModal('closeDayModal');
+    }
+
+    function confirmReset() {
+      if (!confirm('⚠️ ¿Estás COMPLETAMENTE SEGURO? Se borrarán TODOS los datos de forma PERMANENTE.')) {
+        return;
+      }
+      setStorage('ventas_dia', []);
+      setStorage('ventas_ciclo', []);
+      setStorage('ventas_permanentes', []);
+      setStorage('prospectos', []);
+      localStorage.removeItem('ultimo_cierre_ciclo');
+      localStorage.removeItem('nombre_vendedor');
+      setStorage('historial_ciclos', []);
+      refreshUI();
+      showToast('Sistema reseteado');
+    }
+
+    // ============================================
+    // FUNCIONES DE EXPORTACIÓN
+    // ============================================
+
+    function updateExportOptions() {
+      const exportType = document.getElementById('exportType').value;
+      const dateSelector = document.getElementById('dateSelector');
+      const dateSelect = document.getElementById('dateSelect');
+      
+      dateSelect.innerHTML = '';
+      
+      if (exportType === 'day') {
+        dateSelector.style.display = 'block';
+        const salesDay = getStorage('ventas_dia');
+        const today = getCurrentDate();
+        
+        if (salesDay.length > 0) {
+          const option = document.createElement('option');
+          option.value = today;
+          option.textContent = `${today} (Día actual - ${salesDay.length} ventas)`;
+          dateSelect.appendChild(option);
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas hoy';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'cycle') {
+        dateSelector.style.display = 'block';
+        const cycleSales = getCurrentCycleSales();
+        const currentCycle = getCurrentCycle();
+        
+        if (cycleSales.length > 0) {
+          const option = document.createElement('option');
+          option.value = currentCycle;
+          option.textContent = `${currentCycle} (Ciclo actual - ${cycleSales.length} ventas)`; 
+          dateSelect.appendChild(option);
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas en el ciclo actual';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'permanent') {
+        dateSelector.style.display = 'block';
+        const permanentSales = getStorage('ventas_permanentes');
+        
+        const uniqueMonths = [...new Set(permanentSales.map(s => s.month_id).filter(Boolean))].sort().reverse();
+        
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = 'Todos los meses';
+        dateSelect.appendChild(allOption);
+        
+        uniqueMonths.forEach(month => {
+          const monthSales = permanentSales.filter(s => s.month_id === month);
+          const option = document.createElement('option');
+          option.value = month;
+          option.textContent = `${month} (${monthSales.length} ventas)`;
+          dateSelect.appendChild(option);
+        });
+        
+        if (dateSelect.options.length === 1) {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas en historial permanente';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'cycleHistory') {
+        dateSelector.style.display = 'block';
+        const cycleHistory = getStorage('historial_ciclos') || [];
+        
+        if (cycleHistory.length > 0) {
+          cycleHistory.forEach((ciclo, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `Ciclo ${ciclo.ciclo} - ${ciclo.fecha_cierre} - ${formatCLP(ciclo.comision_total)}`;
+            dateSelect.appendChild(option);
+          });
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay historial de cierres';
+          dateSelect.appendChild(option);
+        }
+      } else {
+        dateSelector.style.display = 'none';
+      }
+    }
+
+    function confirmExport() {
+      const exportType = document.getElementById('exportType').value;
+      const dateSelect = document.getElementById('dateSelect');
+      const selectedDate = dateSelect.value;
+      
+      let data = [];
+      let filename = '';
+      
+      if (exportType === 'day') {
+        const salesDay = getStorage('ventas_dia');
+        const today = getCurrentDate();
+        
+        if (selectedDate === today) {
+          data = salesDay;
+          filename = `ventas_dia_${selectedDate}.csv`;
+        }
+      } else if (exportType === 'cycle') {
+        const currentCycle = getCurrentCycle();
+        const cycleSales = getCurrentCycleSales();
+        
+        if (selectedDate === currentCycle) {
+          data = cycleSales;
+          filename = `ventas_ciclo_${selectedDate}.csv`;
+        }
+      } else if (exportType === 'permanent') {
+        const permanentSales = getStorage('ventas_permanentes');
+        
+        if (selectedDate === 'all') {
+          data = permanentSales;
+          filename = 'historial_permanente_completo.csv';
+        } else {
+          data = permanentSales.filter(s => s.month_id === selectedDate);
+          filename = `historial_permanente_${selectedDate}.csv`;
+        }
+      } else if (exportType === 'cycleHistory') {
+        const cycleHistory = getStorage('historial_ciclos') || [];
+        if (selectedDate >= 0 && selectedDate < cycleHistory.length) {
+          const ciclo = cycleHistory[selectedDate];
+          data = [ciclo];
+          filename = `cierre_ciclo_${ciclo.ciclo}_${ciclo.fecha_cierre}.csv`;
+        }
+      }
+      
+      if (data.length === 0) {
+        alert('No hay datos para exportar en la selección elegida');
+        return;
+      }
+      
+      let csv = '';
+      if (exportType === 'cycleHistory') {
+        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total\n';
+        data.forEach(c => {
+          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total}\n`;
+        });
+      } else {
+        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo\n';
+        data.forEach(s => {
+          const timestamp = formatDateTimeForExcel(s.timestamp);
+          const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
+          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}"\n`;
+        });
+      }
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      
+      hideModal('exportModal');
+      showToast(`✓ Exportado: ${filename}`);
+    }
+
+    // ============================================
+    // FUNCIONES DE MODIFICACIÓN
+    // ============================================
+
+    function updateModifyAction() {
+      const action = document.getElementById('modifyAction').value;
+      const addSection = document.getElementById('addSaleSection');
+      const deleteSection = document.getElementById('deleteSaleSection');
+      const searchSection = document.getElementById('searchSaleSection');
+      
+      if (action === 'add') {
+        addSection.style.display = 'block';
+        deleteSection.style.display = 'none';
+        searchSection.style.display = 'none';
+      } else if (action === 'delete') {
+        addSection.style.display = 'none';
+        deleteSection.style.display = 'block';
+        searchSection.style.display = 'none';
+        updateDeleteList();
+      } else if (action === 'search') {
+        addSection.style.display = 'none';
+        deleteSection.style.display = 'none';
+        searchSection.style.display = 'block';
+        searchPermanentSales();
+      }
+    }
+
+    function updateDeleteList() {
+      const period = document.getElementById('deletePeriod').value;
+      const container = document.getElementById('salesListToDelete');
+      container.innerHTML = '';
+      
+      let sales = [];
+      if (period === 'day') {
+        sales = getStorage('ventas_dia');
+      } else if (period === 'cycle') {
+        sales = getCurrentCycleSales();
+      } else if (period === 'permanent') {
+        sales = getStorage('ventas_permanentes');
+      }
+      
+      if (sales.length === 0) {
+        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No hay ventas para eliminar</div>';
+        return;
+      }
+      
+      sales.forEach((sale, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = `
+          padding: 12px;
+          margin: 4px 0;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        `;
+        
+        const time = formatDateTimeForExcel(sale.timestamp);
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
+              <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
+            </div>
+            <button onclick="deleteSaleFromPeriod('${period}', ${index})" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Eliminar</button>
+          </div>
+        `;
+        
+        container.appendChild(div);
+      });
+    }
+
+    function searchPermanentSales() {
+      const query = document.getElementById('searchQuery').value.toLowerCase();
+      const container = document.getElementById('searchResults');
+      container.innerHTML = '';
+      
+      const permanentSales = getStorage('ventas_permanentes');
+      
+      if (permanentSales.length === 0) {
+        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No hay ventas en el historial permanente</div>';
+        return;
+      }
+      
+      let filteredSales = permanentSales;
+      
+      if (query) {
+        filteredSales = permanentSales.filter(sale => {
+          const monthId = sale.month_id || '';
+          const amount = sale.amount_with_vat.toString();
+          const date = sale.date_iso || '';
+          const cycle = sale.cycle_id || '';
+          return monthId.toLowerCase().includes(query) || 
+                 amount.includes(query) ||
+                 date.toLowerCase().includes(query) ||
+                 cycle.toLowerCase().includes(query);
+        });
+      }
+      
+      if (filteredSales.length === 0) {
+        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No se encontraron ventas</div>';
+        return;
+      }
+      
+      filteredSales.slice(0, 50).forEach((sale, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = `
+          padding: 12px;
+          margin: 4px 0;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+        `;
+        
+        const time = formatDateTimeForExcel(sale.timestamp);
+        
+        div.innerHTML = `
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
+            <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
+            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id} | Ciclo: ${sale.cycle_id || getCurrentCycle()}</div>
+          </div>
+        `;
+        
+        container.appendChild(div);
+      });
+    }
+
+    function deleteSaleFromPeriod(period, index) {
+      if (!confirm('¿Estás seguro de eliminar esta venta? Esta acción no se puede deshacer.')) {
+        return;
+      }
+      
+      let saleToDelete;
+      
+      if (period === 'day') {
+        const salesDay = getStorage('ventas_dia');
+        saleToDelete = salesDay[index];
+        
+        const permanentSales = getStorage('ventas_permanentes');
+        const permIndex = permanentSales.findIndex(s => 
+          s.timestamp === saleToDelete.timestamp && 
+          s.amount_with_vat === saleToDelete.amount_with_vat
+        );
+        if (permIndex !== -1) {
+          permanentSales.splice(permIndex, 1);
+          setStorage('ventas_permanentes', permanentSales);
+        }
+        
+        salesDay.splice(index, 1);
+        setStorage('ventas_dia', salesDay);
+        
+      } else if (period === 'cycle') {
+        const cycleSales = getCurrentCycleSales();
+        saleToDelete = cycleSales[index];
+        
+        const permanentSales = getStorage('ventas_permanentes');
+        const permIndex = permanentSales.findIndex(s => 
+          s.timestamp === saleToDelete.timestamp && 
+          s.amount_with_vat === saleToDelete.amount_with_vat
+        );
+        if (permIndex !== -1) {
+          permanentSales.splice(permIndex, 1);
+          setStorage('ventas_permanentes', permanentSales);
+        }
+        
+      } else if (period === 'permanent') {
+        const permanentSales = getStorage('ventas_permanentes');
+        saleToDelete = permanentSales[index];
+        
+        permanentSales.splice(index, 1);
+        setStorage('ventas_permanentes', permanentSales);
+        
+        const today = getCurrentDate();
+        if (saleToDelete.date_iso === today) {
+          const salesDay = getStorage('ventas_dia');
+          const dayIndex = salesDay.findIndex(s => 
+            s.timestamp === saleToDelete.timestamp && 
+            s.amount_with_vat === saleToDelete.amount_with_vat
+          );
+          if (dayIndex !== -1) {
+            salesDay.splice(dayIndex, 1);
+            setStorage('ventas_dia', salesDay);
+          }
+        }
+      }
+      
+      refreshUI();
+      updateDeleteList();
+      showToast('✓ Venta eliminada');
+    }
+
+    function confirmModify() {
+      const action = document.getElementById('modifyAction').value;
+      
+      if (action === 'add') {
+        const dateInput = document.getElementById('saleDate').value;
+        const amountInput = document.getElementById('saleAmount').value;
+        
+        if (!dateInput) {
+          alert('Por favor selecciona una fecha');
+          return;
+        }
+        
+        if (!amountInput) {
+          alert('Por favor ingresa un monto');
+          return;
+        }
+        
+        try {
+          const amt = parseAmount(amountInput);
+          const net = Math.round(amt / 1.19);
+          const commission = Math.round(net * COMMISSION_RATE);
+          
+          const now = new Date();
+          const selectedDateTime = new Date(dateInput + 'T' + 
+            String(now.getHours()).padStart(2, '0') + ':' + 
+            String(now.getMinutes()).padStart(2, '0') + ':' + 
+            String(now.getSeconds()).padStart(2, '0'));
+          
+          const sale = {
+            amount_with_vat: Math.round(amt),
+            net_without_vat: net,
+            commission: commission,
+            timestamp: selectedDateTime.toISOString(),
+            date_iso: dateInput,
+            month_id: dateInput.substring(0, 7),
+            cycle_id: getCycleFromDate(dateInput) // Usa lógica corregida
+          };
+          
+          const permanentSales = getStorage('ventas_permanentes');
+          permanentSales.push(sale);
+          setStorage('ventas_permanentes', permanentSales);
+          
+          const currentCycle = getCurrentCycle();
+          if (getCycleFromDate(dateInput) === currentCycle) {
+            const cycleSales = getCurrentCycleSales();
+            // No necesitamos guardar en ventas_ciclo porque se calcula dinámicamente
+          }
+          
+          const today = getCurrentDate();
+          if (dateInput === today) {
+            const salesDay = getStorage('ventas_dia');
+            salesDay.push(sale);
+            setStorage('ventas_dia', salesDay);
+          }
+          
+          hideModal('modifyModal');
+          refreshUI();
+          showToast(`✓ Venta agregada con fecha ${formatDateForExcel(dateInput)}`);
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+    }
+
+    // ============================================
+    // FUNCIONES DE IMPORTACIÓN CLIENTES (SIN CAMBIOS)
+    // ============================================
+
     function showImportClientModal() {
       showModal('importClientModal');
       resetClientImportForm();
@@ -2021,345 +3207,9 @@
       showToast(`📤 ${prospects.length} prospectos exportados`);
     }
 
-    function showUploadModal() {
-      showModal('uploadModal');
-      resetUploadForm();
-    }
-
-    function resetUploadForm() {
-      document.getElementById('csvFile').value = '';
-      document.getElementById('fileName').textContent = 'No se ha seleccionado ningún archivo';
-      document.getElementById('filePreview').style.display = 'none';
-      document.getElementById('uploadStats').style.display = 'none';
-      document.getElementById('processBtn').disabled = true;
-      selectedFile = null;
-      csvData = [];
-    }
-
-    function handleFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) {
-        resetUploadForm();
-        return;
-      }
-
-      selectedFile = file;
-      document.getElementById('fileName').textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
-      document.getElementById('processBtn').disabled = false;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const content = e.target.result;
-          csvData = parseCSV(content);
-          
-          if (csvData.length === 0) {
-            alert('El archivo CSV está vacío o no tiene el formato correcto.');
-            resetUploadForm();
-            return;
-          }
-
-          showPreview(csvData);
-          showUploadStats(csvData);
-        } catch (error) {
-          alert('Error al leer el archivo CSV: ' + error.message);
-          resetUploadForm();
-        }
-      };
-      reader.readAsText(file, 'UTF-8');
-    }
-
-    function parseCSV(content) {
-      const lines = content.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length === 0) {
-        return [];
-      }
-
-      const firstLine = lines[0].toLowerCase();
-      const hasHeader = firstLine.includes('fecha/hora') || firstLine.includes('monto') || firstLine.includes('comisión');
-      
-      const startIndex = hasHeader ? 1 : 0;
-      const data = [];
-
-      for (let i = startIndex; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-
-        const cells = [];
-        let inQuotes = false;
-        let currentCell = '';
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cells.push(currentCell);
-            currentCell = '';
-          } else {
-            currentCell += char;
-          }
-        }
-        cells.push(currentCell);
-        
-        const cleanCells = cells.map(cell => cell.replace(/"/g, '').trim());
-        
-        if (cleanCells.length >= 6) {
-          const [fechaHoraStr, montoConIVARaw, netoSinIVARaw, comisionRaw, fechaStr, mesStr] = cleanCells;
-          
-          const timestamp = parseDateString(fechaHoraStr);
-          const dateIso = parseDateOnly(fechaStr);
-          const monthId = mesStr;
-          
-          const montoConIVA = Math.round(parseNumber(montoConIVARaw));
-          const netoSinIVA = Math.round(parseNumber(netoSinIVARaw));
-          const comision = Math.round(parseNumber(comisionRaw));
-          
-          if (timestamp && !isNaN(montoConIVA) && !isNaN(netoSinIVA) && !isNaN(comision) && dateIso && monthId) {
-            data.push({
-              fecha_hora: fechaHoraStr,
-              amount_with_vat: montoConIVA,
-              net_without_vat: netoSinIVA,
-              commission: comision,
-              fecha: fechaStr,
-              mes: mesStr,
-              timestamp: timestamp.toISOString(),
-              date_iso: dateIso,
-              month_id: monthId
-            });
-          }
-        }
-      }
-      
-      return data;
-    }
-
-    function parseDateString(dateStr) {
-      const parts = dateStr.split(' ');
-      if (parts.length !== 2) return new Date();
-      
-      const datePart = parts[0];
-      const timePart = parts[1];
-      
-      const dateParts = datePart.split('/');
-      if (dateParts.length !== 3) return new Date();
-      
-      const day = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]) - 1;
-      const year = 2000 + parseInt(dateParts[2]);
-      
-      const timeParts = timePart.split(':');
-      const hours = timeParts.length >= 1 ? parseInt(timeParts[0]) : 0;
-      const minutes = timeParts.length >= 2 ? parseInt(timeParts[1]) : 0;
-      
-      return new Date(year, month, day, hours, minutes);
-    }
-
-    function parseDateOnly(dateStr) {
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return '';
-      
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
-      const year = '20' + parts[2];
-      
-      return `${year}-${month}-${day}`;
-    }
-
-    function parseNumber(numStr) {
-      const clean = numStr.replace(/\./g, '').replace(',', '.');
-      return parseFloat(clean) || 0;
-    }
-
-    function showPreview(data) {
-      const previewBody = document.getElementById('previewBody');
-      previewBody.innerHTML = '';
-      
-      const previewCount = Math.min(5, data.length);
-      
-      for (let i = 0; i < previewCount; i++) {
-        const row = data[i];
-        const tr = document.createElement('tr');
-        
-        tr.innerHTML = `
-          <td>${row.fecha_hora || ''}</td>
-          <td>${formatCLP(row.amount_with_vat)}</td>
-          <td>${formatCLP(row.net_without_vat)}</td>
-          <td>${formatCLP(row.commission)}</td>
-          <td>${row.fecha || ''}</td>
-          <td>${row.mes || ''}</td>
-        `;
-        
-        previewBody.appendChild(tr);
-      }
-      
-      document.getElementById('filePreview').style.display = 'block';
-    }
-
-    function showUploadStats(data) {
-      const totalRecords = data.length;
-      const permanentSales = getStorage('ventas_permanentes');
-      
-      let newRecords = 0;
-      data.forEach(row => {
-        const isDuplicate = permanentSales.some(sale => 
-          sale.timestamp === row.timestamp && 
-          sale.amount_with_vat === row.amount_with_vat
-        );
-        if (!isDuplicate) newRecords++;
-      });
-      
-      document.getElementById('totalRecords').textContent = totalRecords;
-      document.getElementById('newRecords').textContent = newRecords;
-      document.getElementById('importRecords').textContent = newRecords;
-      
-      document.getElementById('uploadStats').style.display = 'block';
-    }
-
-    function processCSVFile() {
-      if (!selectedFile || csvData.length === 0) {
-        alert('No hay archivo para procesar.');
-        return;
-      }
-
-      const permanentSales = getStorage('ventas_permanentes');
-      const salesCycle = getStorage('ventas_ciclo');
-      const salesDay = getStorage('ventas_dia');
-      const today = getCurrentDate();
-      const currentCycle = getCurrentCycle();
-      
-      if (!Array.isArray(permanentSales)) setStorage('ventas_permanentes', []);
-      if (!Array.isArray(salesCycle)) setStorage('ventas_ciclo', []);
-      if (!Array.isArray(salesDay)) setStorage('ventas_dia', []);
-      
-      const permArr = getStorage('ventas_permanentes');
-      const cycleArr = getStorage('ventas_ciclo');
-      const dayArr = getStorage('ventas_dia');
-
-      let addedToPermanent = 0;
-      let addedToCycle = 0;
-      let addedToDay = 0;
-      let duplicates = 0;
-
-      csvData.forEach(row => {
-        const isDuplicate = permArr.some(sale => 
-          sale.timestamp === row.timestamp && 
-          sale.amount_with_vat === row.amount_with_vat
-        );
-
-        if (!isDuplicate) {
-          const sale = {
-            amount_with_vat: row.amount_with_vat,
-            net_without_vat: row.net_without_vat,
-            commission: row.commission,
-            timestamp: row.timestamp,
-            date_iso: row.date_iso,
-            month_id: row.month_id,
-            cycle_id: getCycleFromDate(row.date_iso)
-          };
-
-          permArr.push(sale);
-          addedToPermanent++;
-
-          if (getCycleFromDate(row.date_iso) === currentCycle) {
-            cycleArr.push(sale);
-            addedToCycle++;
-          }
-
-          if (row.date_iso === today) {
-            dayArr.push(sale);
-            addedToDay++;
-          }
-        } else {
-          duplicates++;
-        }
-      });
-
-      setStorage('ventas_permanentes', permArr);
-      setStorage('ventas_ciclo', cycleArr);
-      setStorage('ventas_dia', dayArr);
-
-      let message = `✅ Archivo procesado correctamente:\n\n`;
-      message += `• Registros en CSV: ${csvData.length}\n`;
-      message += `• Nuevos registros agregados: ${addedToPermanent}\n`;
-      message += `• Duplicados omitidos: ${duplicates}\n`;
-      
-      if (addedToCycle > 0) {
-        message += `• Agregados al ciclo actual: ${addedToCycle}\n`;
-      }
-      
-      if (addedToDay > 0) {
-        message += `• Agregados al día actual: ${addedToDay}\n`;
-      }
-
-      alert(message);
-      hideModal('uploadModal');
-      refreshUI();
-      showToast(`✅ ${addedToPermanent} ventas importadas correctamente`);
-    }
-
-    function calculateAndDisplayKPIs() {
-      const permanentSales = getStorage('ventas_permanentes');
-      const today = getCurrentDate();
-      const currentCycle = getCurrentCycle();
-      
-      const startOfWeek = getStartOfWeek();
-      
-      const daySales = permanentSales.filter(s => s.date_iso === today);
-      const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
-      const cycleSales = permanentSales.filter(s => s.cycle_id === currentCycle);
-      
-      const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const dayCount = daySales.length;
-      const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
-      const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
-      
-      const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const weekCount = weekSales.length;
-      const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
-      const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
-      
-      const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCount = cycleSales.length;
-      const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
-      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
-      
-      document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
-      document.getElementById('kpiDayCount').textContent = dayCount;
-      document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
-      document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
-      
-      document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
-      document.getElementById('kpiWeekCount').textContent = weekCount;
-      document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
-      document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
-      
-      document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
-      document.getElementById('kpiCycleCount').textContent = cycleCount;
-      document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
-      document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
-    }
-
-    function getStartOfWeek() {
-      const now = new Date();
-      const day = now.getDay();
-      const diff = day === 0 ? 6 : day - 1;
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - diff);
-      startOfWeek.setHours(0, 0, 0, 0);
-      return startOfWeek.toISOString().split('T')[0];
-    }
-
-    function isDateInWeek(dateString, startOfWeek) {
-      const date = new Date(dateString);
-      const start = new Date(startOfWeek);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      
-      return date >= start && date <= end;
-    }
+    // ============================================
+    // FUNCIONES DE PWA Y UTILIDADES
+    // ============================================
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -2431,178 +3281,6 @@
     const manifestURL = URL.createObjectURL(manifestBlob);
     document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
 
-    function getStorage(key) {
-      try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : [];
-      } catch (e) {
-        console.error('Error reading storage:', e);
-        return [];
-      }
-    }
-
-    function setStorage(key, value) {
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        return true;
-      } catch (e) {
-        console.error('Error saving storage:', e);
-        alert('Error al guardar datos. Verifica el espacio disponible.');
-        return false;
-      }
-    }
-
-    function formatCLP(amount) {
-      const num = Math.round(parseFloat(amount) || 0);
-      const sign = num < 0 ? '-' : '';
-      const abs = Math.abs(num);
-      return `${sign}$ ${abs.toLocaleString('es-CL')}`;
-    }
-
-    function formatDateForExcel(isoString) {
-      if (!isoString) return '';
-      const date = new Date(isoString);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      return `${day}/${month}/${year}`;
-    }
-
-    function formatDateTimeForExcel(isoString) {
-      if (!isoString) return '';
-      const date = new Date(isoString);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = String(date.getFullYear()).slice(-2);
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
-      return `${day}/${month}/${year} ${hours}:${minutes}`;
-    }
-
-    function parseAmount(str) {
-      if (!str) throw new Error('Introduce un número válido');
-      const cleaned = str.replace(/[^0-9]/g, '');
-      if (!cleaned) throw new Error('Introduce un número válido');
-      return parseFloat(cleaned);
-    }
-
-    function getCurrentDate() {
-      const now = new Date();
-      return now.toISOString().split('T')[0];
-    }
-
-    function getCurrentCycle() {
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      if (!lastClose) return 'C1';
-      
-      const today = new Date();
-      const lastCloseDate = new Date(lastClose);
-      const diffDays = Math.floor((today - lastCloseDate) / (1000 * 60 * 60 * 24));
-      
-      if (diffDays <= 15) {
-        return 'C1';
-      } else {
-        return 'C2';
-      }
-    }
-
-    function getCycleFromDate(dateString) {
-      const date = new Date(dateString);
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      
-      if (!lastClose) {
-        return 'C1';
-      }
-      
-      const lastCloseDate = new Date(lastClose);
-      const diffDays = Math.floor((date - lastCloseDate) / (1000 * 60 * 60 * 24));
-      
-      return diffDays <= 15 ? 'C1' : 'C2';
-    }
-
-    function addSale() {
-      const input = document.getElementById('amountInput');
-      const amountText = input.value;
-      
-      try {
-        const amt = parseAmount(amountText);
-        const net = Math.round(amt / 1.19);
-        const commission = Math.round(net * COMMISSION_RATE);
-        
-        const sale = {
-          amount_with_vat: Math.round(amt),
-          net_without_vat: net,
-          commission: commission,
-          timestamp: new Date().toISOString(),
-          date_iso: getCurrentDate(),
-          month_id: getCurrentDate().substring(0, 7),
-          cycle_id: getCurrentCycle()
-        };
-
-        const permanentSales = getStorage('ventas_permanentes');
-        permanentSales.push(sale);
-        setStorage('ventas_permanentes', permanentSales);
-
-        const salesCycle = getStorage('ventas_ciclo');
-        salesCycle.push(sale);
-        setStorage('ventas_ciclo', salesCycle);
-
-        const salesDay = getStorage('ventas_dia');
-        salesDay.push(sale);
-        setStorage('ventas_dia', salesDay);
-
-        if (input.value) {
-          input.value = '';
-          refreshUI();
-          showToast('✓ Venta agregada correctamente');
-        }
-      } catch (e) {
-        alert(e.message);
-      }
-    }
-
-    function deleteLastSale() {
-      const salesDay = getStorage('ventas_dia');
-      
-      if (salesDay.length === 0) {
-        alert('No hay ventas para eliminar');
-        return;
-      }
-      
-      const lastSale = salesDay[salesDay.length - 1];
-      const lastAmount = formatCLP(lastSale.amount_with_vat);
-      
-      if (!confirm(`¿Eliminar la última venta de ${lastAmount}?`)) {
-        return;
-      }
-      
-      const permanentSales = getStorage('ventas_permanentes');
-      const permIndex = permanentSales.findIndex(s => 
-        s.timestamp === lastSale.timestamp && 
-        s.amount_with_vat === lastSale.amount_with_vat
-      );
-      if (permIndex !== -1) {
-        permanentSales.splice(permIndex, 1);
-        setStorage('ventas_permanentes', permanentSales);
-      }
-      
-      salesDay.pop();
-      setStorage('ventas_dia', salesDay);
-      
-      const salesCycle = getStorage('ventas_ciclo');
-      const cycleIndex = salesCycle.findIndex(s => 
-        s.timestamp === lastSale.timestamp && 
-        s.amount_with_vat === lastSale.amount_with_vat
-      );
-      if (cycleIndex !== -1) {
-        salesCycle.splice(cycleIndex, 1);
-        setStorage('ventas_ciclo', salesCycle);
-      }
-      
-      refreshUI();
-      showToast('✓ Última venta eliminada');
-    }
-
     function showToast(message) {
       const toast = document.createElement('div');
       toast.textContent = message;
@@ -2624,642 +3302,9 @@
       setTimeout(() => toast.remove(), 2000);
     }
 
-    function closeDay() {
-      setStorage('ventas_dia', []);
-      refreshUI();
-      showToast('✓ Día cerrado. Ventas del día vaciadas.');
-    }
-
-    function closeCycle() {
-      const cycleDate = document.getElementById('cycleCloseDate').value;
-      if (!cycleDate) {
-        alert('Por favor selecciona una fecha de cierre');
-        return;
-      }
-      
-      localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
-      setStorage('ventas_ciclo', []);
-      setStorage('ventas_dia', []);
-      
-      const cycleHistory = getStorage('historial_ciclos') || [];
-      const cycleSales = getStorage('ventas_permanentes').filter(s => 
-        s.cycle_id === getCurrentCycle() && new Date(s.date_iso) <= new Date(cycleDate)
-      );
-      
-      const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const totalCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
-      
-      cycleHistory.push({
-        fecha_cierre: cycleDate,
-        ciclo: getCurrentCycle(),
-        ventas_count: cycleSales.length,
-        total_with_vat: totalWithVat,
-        total_without_vat: totalWithoutVat,
-        comision_total: totalCommission
-      });
-      
-      setStorage('historial_ciclos', cycleHistory);
-      refreshUI();
-      showToast('✓ Ciclo cerrado correctamente');
-    }
-
-    function resetAll() {
-      if (!confirm('⚠️ ¿Estás COMPLETAMENTE SEGURO? Se borrarán TODOS los datos de forma PERMANENTE.')) {
-        return;
-      }
-      setStorage('ventas_dia', []);
-      setStorage('ventas_ciclo', []);
-      setStorage('ventas_permanentes', []);
-      setStorage('prospectos', []);
-      localStorage.removeItem('ultimo_cierre_ciclo');
-      localStorage.removeItem('nombre_vendedor');
-      setStorage('historial_ciclos', []);
-      refreshUI();
-      showToast('Sistema reseteado');
-    }
-
-    function exportToExcel() {
-      showModal('exportModal');
-      updateExportOptions();
-    }
-
-    function updateExportOptions() {
-      const exportType = document.getElementById('exportType').value;
-      const dateSelector = document.getElementById('dateSelector');
-      const dateSelect = document.getElementById('dateSelect');
-      
-      dateSelect.innerHTML = '';
-      
-      if (exportType === 'day') {
-        dateSelector.style.display = 'block';
-        const salesDay = getStorage('ventas_dia');
-        const today = getCurrentDate();
-        
-        if (salesDay.length > 0) {
-          const option = document.createElement('option');
-          option.value = today;
-          option.textContent = `${today} (Día actual - ${salesDay.length} ventas)`;
-          dateSelect.appendChild(option);
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas hoy';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'cycle') {
-        dateSelector.style.display = 'block';
-        const salesCycle = getStorage('ventas_ciclo');
-        const currentCycle = getCurrentCycle();
-        
-        if (salesCycle.length > 0) {
-          const option = document.createElement('option');
-          option.value = currentCycle;
-          option.textContent = `${currentCycle} (Ciclo actual - ${salesCycle.length} ventas)`; 
-          dateSelect.appendChild(option);
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas en el ciclo actual';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'permanent') {
-        dateSelector.style.display = 'block';
-        const permanentSales = getStorage('ventas_permanentes');
-        
-        const uniqueMonths = [...new Set(permanentSales.map(s => s.month_id).filter(Boolean))].sort().reverse();
-        
-        const allOption = document.createElement('option');
-        allOption.value = 'all';
-        allOption.textContent = 'Todos los meses';
-        dateSelect.appendChild(allOption);
-        
-        uniqueMonths.forEach(month => {
-          const monthSales = permanentSales.filter(s => s.month_id === month);
-          const option = document.createElement('option');
-          option.value = month;
-          option.textContent = `${month} (${monthSales.length} ventas)`;
-          dateSelect.appendChild(option);
-        });
-        
-        if (dateSelect.options.length === 1) {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas en historial permanente';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'cycleHistory') {
-        dateSelector.style.display = 'block';
-        const cycleHistory = getStorage('historial_ciclos') || [];
-        
-        if (cycleHistory.length > 0) {
-          cycleHistory.forEach((ciclo, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `Ciclo ${ciclo.ciclo} - ${ciclo.fecha_cierre} - ${formatCLP(ciclo.comision_total)}`;
-            dateSelect.appendChild(option);
-          });
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay historial de cierres';
-          dateSelect.appendChild(option);
-        }
-      } else {
-        dateSelector.style.display = 'none';
-      }
-    }
-
-    function confirmExport() {
-      const exportType = document.getElementById('exportType').value;
-      const dateSelect = document.getElementById('dateSelect');
-      const selectedDate = dateSelect.value;
-      
-      let data = [];
-      let filename = '';
-      
-      if (exportType === 'day') {
-        const salesDay = getStorage('ventas_dia');
-        const today = getCurrentDate();
-        
-        if (selectedDate === today) {
-          data = salesDay;
-          filename = `ventas_dia_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'cycle') {
-        const currentCycle = getCurrentCycle();
-        const salesCycle = getStorage('ventas_ciclo');
-        
-        if (selectedDate === currentCycle) {
-          data = salesCycle.filter(s => s.cycle_id === currentCycle);
-          filename = `ventas_ciclo_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'permanent') {
-        const permanentSales = getStorage('ventas_permanentes');
-        
-        if (selectedDate === 'all') {
-          data = permanentSales;
-          filename = 'historial_permanente_completo.csv';
-        } else {
-          data = permanentSales.filter(s => s.month_id === selectedDate);
-          filename = `historial_permanente_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'cycleHistory') {
-        const cycleHistory = getStorage('historial_ciclos') || [];
-        if (selectedDate >= 0 && selectedDate < cycleHistory.length) {
-          const ciclo = cycleHistory[selectedDate];
-          data = [ciclo];
-          filename = `cierre_ciclo_${ciclo.ciclo}_${ciclo.fecha_cierre}.csv`;
-        }
-      }
-      
-      if (data.length === 0) {
-        alert('No hay datos para exportar en la selección elegida');
-        return;
-      }
-      
-      let csv = '';
-      if (exportType === 'cycleHistory') {
-        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total\n';
-        data.forEach(c => {
-          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total}\n`;
-        });
-      } else {
-        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo\n';
-        data.forEach(s => {
-          const timestamp = formatDateTimeForExcel(s.timestamp);
-          const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
-          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}"\n`;
-        });
-      }
-      
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      
-      hideModal('exportModal');
-      showToast(`✓ Exportado: ${filename}`);
-    }
-
-    function showModifyModal() {
-      showModal('modifyModal');
-      document.getElementById('saleDate').value = getCurrentDate();
-      document.getElementById('saleAmount').value = '';
-      document.getElementById('searchQuery').value = '';
-      updateModifyAction();
-    }
-
-    function updateModifyAction() {
-      const action = document.getElementById('modifyAction').value;
-      const addSection = document.getElementById('addSaleSection');
-      const deleteSection = document.getElementById('deleteSaleSection');
-      const searchSection = document.getElementById('searchSaleSection');
-      
-      if (action === 'add') {
-        addSection.style.display = 'block';
-        deleteSection.style.display = 'none';
-        searchSection.style.display = 'none';
-      } else if (action === 'delete') {
-        addSection.style.display = 'none';
-        deleteSection.style.display = 'block';
-        searchSection.style.display = 'none';
-        updateDeleteList();
-      } else if (action === 'search') {
-        addSection.style.display = 'none';
-        deleteSection.style.display = 'none';
-        searchSection.style.display = 'block';
-        searchPermanentSales();
-      }
-    }
-
-    function updateDeleteList() {
-      const period = document.getElementById('deletePeriod').value;
-      const container = document.getElementById('salesListToDelete');
-      container.innerHTML = '';
-      
-      let sales = [];
-      if (period === 'day') {
-        sales = getStorage('ventas_dia');
-      } else if (period === 'cycle') {
-        const currentCycle = getCurrentCycle();
-        const allSales = getStorage('ventas_ciclo');
-        sales = allSales.filter(s => s.cycle_id === currentCycle);
-      } else if (period === 'permanent') {
-        sales = getStorage('ventas_permanentes');
-      }
-      
-      if (sales.length === 0) {
-        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No hay ventas para eliminar</div>';
-        return;
-      }
-      
-      sales.forEach((sale, index) => {
-        const div = document.createElement('div');
-        div.style.cssText = `
-          padding: 12px;
-          margin: 4px 0;
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-        `;
-        
-        const time = formatDateTimeForExcel(sale.timestamp);
-        
-        div.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="flex: 1;">
-              <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
-              <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
-            </div>
-            <button onclick="deleteSaleFromPeriod('${period}', ${index})" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">Eliminar</button>
-          </div>
-        `;
-        
-        container.appendChild(div);
-      });
-    }
-
-    function searchPermanentSales() {
-      const query = document.getElementById('searchQuery').value.toLowerCase();
-      const container = document.getElementById('searchResults');
-      container.innerHTML = '';
-      
-      const permanentSales = getStorage('ventas_permanentes');
-      
-      if (permanentSales.length === 0) {
-        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No hay ventas en el historial permanente</div>';
-        return;
-      }
-      
-      let filteredSales = permanentSales;
-      
-      if (query) {
-        filteredSales = permanentSales.filter(sale => {
-          const monthId = sale.month_id || '';
-          const amount = sale.amount_with_vat.toString();
-          const date = sale.date_iso || '';
-          const cycle = sale.cycle_id || '';
-          return monthId.toLowerCase().includes(query) || 
-                 amount.includes(query) ||
-                 date.toLowerCase().includes(query) ||
-                 cycle.toLowerCase().includes(query);
-        });
-      }
-      
-      if (filteredSales.length === 0) {
-        container.innerHTML = '<div style="padding: 12px; color: var(--muted); text-align: center;">No se encontraron ventas</div>';
-        return;
-      }
-      
-      filteredSales.slice(0, 50).forEach((sale, index) => {
-        const div = document.createElement('div');
-        div.style.cssText = `
-          padding: 12px;
-          margin: 4px 0;
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 8px;
-        `;
-        
-        const time = formatDateTimeForExcel(sale.timestamp);
-        
-        div.innerHTML = `
-          <div style="flex: 1;">
-            <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
-            <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
-            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id} | Ciclo: ${sale.cycle_id || getCurrentCycle()}</div>
-          </div>
-        `;
-        
-        container.appendChild(div);
-      });
-    }
-
-    function deleteSaleFromPeriod(period, index) {
-      if (!confirm('¿Estás seguro de eliminar esta venta? Esta acción no se puede deshacer.')) {
-        return;
-      }
-      
-      let saleToDelete;
-      
-      if (period === 'day') {
-        const salesDay = getStorage('ventas_dia');
-        saleToDelete = salesDay[index];
-        
-        const permanentSales = getStorage('ventas_permanentes');
-        const permIndex = permanentSales.findIndex(s => 
-          s.timestamp === saleToDelete.timestamp && 
-          s.amount_with_vat === saleToDelete.amount_with_vat
-        );
-        if (permIndex !== -1) {
-          permanentSales.splice(permIndex, 1);
-          setStorage('ventas_permanentes', permanentSales);
-        }
-        
-        salesDay.splice(index, 1);
-        setStorage('ventas_dia', salesDay);
-        
-        const salesCycle = getStorage('ventas_ciclo');
-        const cycleIndex = salesCycle.findIndex(s => 
-          s.timestamp === saleToDelete.timestamp && 
-          s.amount_with_vat === saleToDelete.amount_with_vat
-        );
-        if (cycleIndex !== -1) {
-          salesCycle.splice(cycleIndex, 1);
-          setStorage('ventas_ciclo', salesCycle);
-        }
-        
-      } else if (period === 'cycle') {
-        const currentCycle = getCurrentCycle();
-        const salesCycle = getStorage('ventas_ciclo');
-        const cycleSales = salesCycle.filter(s => s.cycle_id === currentCycle);
-        saleToDelete = cycleSales[index];
-        
-        const permanentSales = getStorage('ventas_permanentes');
-        const permIndex = permanentSales.findIndex(s => 
-          s.timestamp === saleToDelete.timestamp && 
-          s.amount_with_vat === saleToDelete.amount_with_vat
-        );
-        if (permIndex !== -1) {
-          permanentSales.splice(permIndex, 1);
-          setStorage('ventas_permanentes', permanentSales);
-        }
-        
-        const fullIndex = salesCycle.findIndex(s => 
-          s.timestamp === saleToDelete.timestamp && 
-          s.amount_with_vat === saleToDelete.amount_with_vat
-        );
-        if (fullIndex !== -1) {
-          salesCycle.splice(fullIndex, 1);
-          setStorage('ventas_ciclo', salesCycle);
-        }
-        
-        const today = getCurrentDate();
-        if (saleToDelete.date_iso === today) {
-          const salesDay = getStorage('ventas_dia');
-          const dayIndex = salesDay.findIndex(s => 
-            s.timestamp === saleToDelete.timestamp && 
-            s.amount_with_vat === saleToDelete.amount_with_vat
-          );
-          if (dayIndex !== -1) {
-            salesDay.splice(dayIndex, 1);
-            setStorage('ventas_dia', salesDay);
-          }
-        }
-        
-      } else if (period === 'permanent') {
-        const permanentSales = getStorage('ventas_permanentes');
-        saleToDelete = permanentSales[index];
-        
-        permanentSales.splice(index, 1);
-        setStorage('ventas_permanentes', permanentSales);
-        
-        const currentCycle = getCurrentCycle();
-        if (saleToDelete.cycle_id === currentCycle) {
-          const salesCycle = getStorage('ventas_ciclo');
-          const cycleIndex = salesCycle.findIndex(s => 
-            s.timestamp === saleToDelete.timestamp && 
-            s.amount_with_vat === saleToDelete.amount_with_vat
-          );
-          if (cycleIndex !== -1) {
-            salesCycle.splice(cycleIndex, 1);
-            setStorage('ventas_ciclo', salesCycle);
-          }
-        }
-        
-        const today = getCurrentDate();
-        if (saleToDelete.date_iso === today) {
-          const salesDay = getStorage('ventas_dia');
-          const dayIndex = salesDay.findIndex(s => 
-            s.timestamp === saleToDelete.timestamp && 
-            s.amount_with_vat === saleToDelete.amount_with_vat
-          );
-          if (dayIndex !== -1) {
-            salesDay.splice(dayIndex, 1);
-            setStorage('ventas_dia', salesDay);
-          }
-        }
-      }
-      
-      refreshUI();
-      updateDeleteList();
-      showToast('✓ Venta eliminada');
-    }
-
-    function confirmModify() {
-      const action = document.getElementById('modifyAction').value;
-      
-      if (action === 'add') {
-        const dateInput = document.getElementById('saleDate').value;
-        const amountInput = document.getElementById('saleAmount').value;
-        
-        if (!dateInput) {
-          alert('Por favor selecciona una fecha');
-          return;
-        }
-        
-        if (!amountInput) {
-          alert('Por favor ingresa un monto');
-          return;
-        }
-        
-        try {
-          const amt = parseAmount(amountInput);
-          const net = Math.round(amt / 1.19);
-          const commission = Math.round(net * COMMISSION_RATE);
-          
-          const now = new Date();
-          const selectedDateTime = new Date(dateInput + 'T' + 
-            String(now.getHours()).padStart(2, '0') + ':' + 
-            String(now.getMinutes()).padStart(2, '0') + ':' + 
-            String(now.getSeconds()).padStart(2, '0'));
-          
-          const sale = {
-            amount_with_vat: Math.round(amt),
-            net_without_vat: net,
-            commission: commission,
-            timestamp: selectedDateTime.toISOString(),
-            date_iso: dateInput,
-            month_id: dateInput.substring(0, 7),
-            cycle_id: getCycleFromDate(dateInput)
-          };
-          
-          const permanentSales = getStorage('ventas_permanentes');
-          permanentSales.push(sale);
-          setStorage('ventas_permanentes', permanentSales);
-          
-          const currentCycle = getCurrentCycle();
-          if (getCycleFromDate(dateInput) === currentCycle) {
-            const salesCycle = getStorage('ventas_ciclo');
-            salesCycle.push(sale);
-            setStorage('ventas_ciclo', salesCycle);
-          }
-          
-          const today = getCurrentDate();
-          if (dateInput === today) {
-            const salesDay = getStorage('ventas_dia');
-            salesDay.push(sale);
-            setStorage('ventas_dia', salesDay);
-          }
-          
-          hideModal('modifyModal');
-          refreshUI();
-          showToast(`✓ Venta agregada con fecha ${formatDateForExcel(dateInput)}`);
-        } catch (e) {
-          alert(e.message);
-        }
-      }
-    }
-
-    function refreshUI() {
-      const salesDay = getStorage('ventas_dia');
-      const salesCycle = getStorage('ventas_ciclo');
-      const currentCycle = getCurrentCycle();
-      const salesCurrentCycle = salesCycle.filter(s => s.cycle_id === currentCycle);
-
-      const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + s.commission, 0));
-
-      const cycleWithVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.commission, 0));
-
-      document.getElementById('dayWithVat').textContent = formatCLP(dayWithVat);
-      document.getElementById('dayWithoutVat').textContent = formatCLP(dayWithoutVat);
-      document.getElementById('dayCommission').textContent = formatCLP(dayCommission);
-      document.getElementById('cycleWithVat').textContent = formatCLP(cycleWithVat);
-      document.getElementById('cycleWithoutVat').textContent = formatCLP(cycleWithoutVat);
-      document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
-
-      renderSalesList('salesDay', salesDay.slice(-20).reverse());
-      renderSalesList('salesCycle', salesCurrentCycle.slice(-20).reverse());
-
-      const cycleCloseDate = document.getElementById('cycleCloseDate');
-      if (cycleCloseDate) {
-        const today = new Date().toISOString().split('T')[0];
-        cycleCloseDate.value = today;
-        // NO SE ESTABLECE RESTRICCIÓN DE FECHA MÍNIMA - Permitir cualquier fecha
-      }
-
-      updateCycleSummary();
-    }
-
-    function updateCycleSummary() {
-      const currentCycle = getCurrentCycle();
-      const salesCurrentCycle = getStorage('ventas_ciclo').filter(s => s.cycle_id === currentCycle);
-      
-      const cycleWithVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.commission, 0));
-      const cycleCount = salesCurrentCycle.length;
-      
-      document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
-      document.getElementById('cycleSummaryWithoutVat').textContent = formatCLP(cycleWithoutVat);
-      document.getElementById('cycleSummaryCommission').textContent = formatCLP(cycleCommission);
-      document.getElementById('cycleSummaryCount').textContent = cycleCount;
-    }
-
-    function renderSalesList(elementId, sales) {
-      const container = document.getElementById(elementId);
-      container.innerHTML = '';
-      sales.forEach((s, i) => {
-        const div = document.createElement('div');
-        div.className = 'sale-item';
-        const time = s.timestamp.substring(0, 16).replace('T', ' ');
-        div.textContent = `${i + 1}. ${formatCLP(s.amount_with_vat)} | Neto: ${formatCLP(s.net_without_vat)} | Com: ${formatCLP(s.commission)} | ${time}`;
-        container.appendChild(div);
-      });
-    }
-
-    function showModal(id) {
-      document.getElementById(id).classList.add('active');
-    }
-
-    function hideModal(id) {
-      document.getElementById(id).classList.remove('active');
-    }
-
-    function showCloseDayModal() {
-      showModal('closeDayModal');
-    }
-
-    function showCloseCycleModal() {
-      showModal('closeCycleModal');
-      updateCycleSummary();
-      
-      // CORRECCIÓN: No establecer restricciones de fecha mínima
-      const cycleCloseDate = document.getElementById('cycleCloseDate');
-      if (cycleCloseDate) {
-        const today = new Date().toISOString().split('T')[0];
-        cycleCloseDate.value = today;
-        // NO establecer cycleCloseDate.min = today; - Permitir fechas anteriores
-      }
-    }
-
-    function showResetModal() {
-      showModal('resetModal');
-    }
-
-    function showExportModal() {
-      showModal('exportModal');
-      updateExportOptions();
-    }
-
-    function confirmCloseDay() {
-      closeDay();
-      hideModal('closeDayModal');
-    }
-
-    function confirmCloseCycle() {
-      closeCycle();
-      hideModal('closeCycleModal');
-    }
-
-    function confirmReset() {
-      resetAll();
-      hideModal('resetModal');
-    }
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
 
     document.addEventListener('DOMContentLoaded', () => {
       const saleDateInput = document.getElementById('saleDate');
@@ -3329,6 +3374,7 @@
       });
     }
 
+    // Exponer funciones al scope global
     (function exposeApiToWindow() {
       const apiNames = [
         'showMainScreen','showAnalysisScreen','showCRMScreen','showUploadModal','showModifyModal','showCloseDayModal','showCloseCycleModal',
