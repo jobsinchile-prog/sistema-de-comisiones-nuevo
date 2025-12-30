@@ -188,7 +188,7 @@
       border-radius: 8px;
       padding: 12px;
       margin-bottom: 20px;
-      height: 200px; /* Altura fija para mostrar 4 registros */
+      height: 200px;
       overflow-y: auto;
       border: 1px solid var(--border);
     }
@@ -207,7 +207,7 @@
       border-bottom: 1px solid var(--border);
       font-size: 13px;
       line-height: 1.6;
-      min-height: 40px; /* Altura aproximada para 4 registros visibles */
+      min-height: 40px;
     }
     
     .sale-item:last-child {
@@ -286,7 +286,6 @@
       font-size: 13px;
     }
     
-    /* ==================== NUEVOS ESTILOS PARA ANÁLISIS ==================== */
     .analysis-screen {
       display: none;
       animation: fadeIn 0.3s ease;
@@ -343,7 +342,6 @@
       border: 1px solid var(--border);
     }
     
-    /* ==================== ESTILOS PARA UPLOAD ==================== */
     .file-upload-container {
       margin: 16px 0;
     }
@@ -421,7 +419,6 @@
       color: var(--text);
     }
     
-    /* ==================== FIX PARA INPUT DATE EN MÓVILES ==================== */
     input[type="date"] {
       appearance: none;
       -webkit-appearance: none;
@@ -448,7 +445,6 @@
       display: none;
     }
     
-    /* Estilo alternativo para móviles */
     .date-input-wrapper {
       position: relative;
       width: 100%;
@@ -486,7 +482,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
-    /* ==================== NUEVO ORDEN DE ELEMENTOS ==================== */
     .actions-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -498,7 +493,6 @@
       width: 100%;
     }
     
-    /* ==================== ESTILOS PARA CRM ==================== */
     .tag {
       display: inline-block;
       padding: 4px 8px;
@@ -605,7 +599,6 @@
       color: var(--text);
     }
     
-    /* ==================== ESTILOS PARA WHATSAPP ==================== */
     .btn-whatsapp {
       background: #25D366;
       color: white;
@@ -681,7 +674,6 @@
       color: var(--accent);
     }
     
-    /* ==================== BOTÓN INTERMITENTE MEJORADO ==================== */
     .btn-flashing {
       background: #dc2626;
       color: #ffffff;
@@ -764,7 +756,6 @@
   </style>
 </head>
 <body>
-  <!-- Pantalla Principal (siempre visible al inicio) -->
   <div id="mainScreen">
     <div id="installPrompt" class="install-prompt">
       <div class="install-prompt-text">
@@ -778,7 +769,6 @@
       <p>Sistema de Comisiones</p>
     </div>
 
-    <!-- 1. RESUMEN DE VENTAS -->
     <div class="section-title">📊 Resumen de Ventas</div>
     <div class="totals-grid">
       <div class="total-cell">
@@ -807,7 +797,6 @@
       </div>
     </div>
 
-    <!-- 2. AGREGAR VENTA -->
     <div class="section-title">➕ Agregar Venta</div>
     <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
       Introduce el <strong>monto TOTAL con IVA</strong> (ejemplo: 119000):
@@ -821,46 +810,23 @@
       🗑️ Eliminar Última Venta
     </button>
 
-    <!-- 3. ACCIONES - REORDENADO EN 3 FILAS Y 2 COLUMNAS (SE ELIMINÓ LA FILA DE TRABAJOS) -->
     <div class="section-title">⚙️ Acciones</div>
     <div class="actions-grid">
-      <!-- Fila 1 -->
       <button class="btn btn-danger" onclick="showCloseDayModal()">Cerrar Día</button>
       <button class="btn btn-danger" onclick="showCloseCycleModal()">Cerrar Ciclo Comisiones</button>
-      
-      <!-- Fila 2 -->
       <button class="btn btn-accent" onclick="showAnalysisScreen()">Análisis de Ventas</button>
       <button class="btn btn-accent" onclick="showModifyModal()">Modificar Ventas</button>
-      
-      <!-- Fila 3 -->
       <button class="btn btn-info" onclick="showCRMScreen()">Gestión de Clientes</button>
       <button class="btn btn-secondary" onclick="showExportModal()">Exportar Ventas</button>
-      
-      <!-- Fila 4 -->
       <button class="btn btn-info" onclick="showUploadModal()">Subir Archivos Ventas</button>
     </div>
 
-    <!-- 4. GRÁFICOS -->
-    <div class="section-title">📊 Gráficos</div>
-    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Comisiones Diarias (Ciclo Actual)</h3>
-      <canvas id="dailyChart" style="max-height: 250px;"></canvas>
-    </div>
-    
-    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
-      <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; font-weight: 600;">Historial de Cierres de Ciclo</h3>
-      <canvas id="cycleHistoryChart" style="max-height: 250px;"></canvas>
-    </div>
-
-    <!-- 5. VENTAS DEL DÍA (4 registros visibles) -->
     <div class="section-title">📅 Ventas del Día</div>
     <div class="sales-list" id="salesDay"></div>
 
-    <!-- 6. VENTAS DEL CICLO (4 registros visibles) -->
     <div class="section-title">📆 Ventas del Ciclo Actual</div>
     <div class="sales-list" id="salesCycle"></div>
 
-    <!-- 7. RESETEAR SISTEMA -->
     <div class="section-title">🔄 Resetear Sistema</div>
     <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
       ⚠️ <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos guardados.
@@ -868,7 +834,6 @@
     <button class="btn btn-danger" onclick="showResetModal()">Resetear Todo</button>
   </div>
 
-  <!-- ==================== PANTALLA DE ANÁLISIS ==================== -->
   <div id="analysisScreen" class="analysis-screen">
     <div class="header">
       <h2>Análisis de Ventas</h2>
@@ -954,7 +919,6 @@
     </div>
   </div>
 
-  <!-- ==================== PANTALLA DE CRM ==================== -->
   <div id="crmScreen" class="analysis-screen">
     <div class="header">
       <h2>CRM - Gestión de Prospectos</h2>
@@ -965,7 +929,6 @@
       ← Volver a la pantalla principal
     </button>
 
-    <!-- CONFIGURACIÓN DEL VENDEDOR -->
     <div class="vendedor-config">
       <h3>Configuración de Mensajes</h3>
       <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
@@ -980,7 +943,6 @@
       </div>
     </div>
 
-    <!-- ACCIONES RÁPIDAS -->
     <div class="section-title">⚡ Acciones Rápidas</div>
     <div class="actions-grid">
       <button class="btn btn-accent" onclick="showAddProspectModal()">➕ Agregar Prospecto</button>
@@ -988,7 +950,6 @@
       <button class="btn btn-secondary" onclick="exportProspects()">📥 Exportar Excel</button>
     </div>
 
-    <!-- FILTROS -->
     <div class="section-title">🔍 Filtros y Búsqueda</div>
     <div style="background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 1px solid var(--border);">
       <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
@@ -1011,13 +972,9 @@
       </button>
     </div>
 
-    <!-- LISTADO DE PROSPECTOS -->
     <div class="section-title">👥 Listado de Prospectos</div>
-    <div class="sales-list" id="prospectList" style="height: 300px;">
-      <!-- Prospectos se cargarán aquí -->
-    </div>
+    <div class="sales-list" id="prospectList" style="height: 300px;"></div>
 
-    <!-- ESTADÍSTICAS -->
     <div class="section-title">📊 Estadísticas</div>
     <div class="totals-grid">
       <div class="total-cell">
@@ -1039,17 +996,14 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL SUBIR ARCHIVO ==================== -->
   <div id="uploadModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title">📁 Subir Archivo CSV</div>
-      
       <div style="margin: 16px 0;">
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
           Sube un archivo CSV con el siguiente formato:<br>
           <strong>Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes</strong>
         </p>
-        
         <div class="file-upload-container">
           <div class="file-input-wrapper">
             <button class="file-input-button">📂 Seleccionar archivo CSV</button>
@@ -1057,7 +1011,6 @@
           </div>
           <div id="fileName" class="file-name">No se ha seleccionado ningún archivo</div>
         </div>
-        
         <div id="filePreview" class="upload-preview" style="display: none;">
           <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 5 filas):</h4>
           <table id="previewTable">
@@ -1071,11 +1024,9 @@
                 <th>Mes</th>
               </tr>
             </thead>
-            <tbody id="previewBody">
-            </tbody>
+            <tbody id="previewBody"></tbody>
           </table>
         </div>
-        
         <div id="uploadStats" style="margin-top: 12px; display: none;">
           <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen:</div>
           <div style="font-size: 12px; color: var(--muted);">
@@ -1085,34 +1036,23 @@
           </div>
         </div>
       </div>
-
       <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="processCSVFile()" id="processBtn" disabled>
-          📥 Procesar Archivo
-        </button>
+        <button class="btn btn-accent" onclick="processCSVFile()" id="processBtn" disabled>📥 Procesar Archivo</button>
         <button class="btn btn-secondary" onclick="hideModal('uploadModal')">✗ Cancelar</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL AGREGAR PROSPECTO - MODIFICADO CON ETIQUETAS ==================== -->
   <div id="addProspectModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title">➕ Agregar Nuevo Prospecto</div>
-      
       <div style="margin: 16px 0;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Nombre y Apellido:</label>
-        <input type="text" id="prospectName" placeholder="Ej: Juan Pérez" 
-               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        
+        <input type="text" id="prospectName" placeholder="Ej: Juan Pérez" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Teléfono:</label>
-        <input type="text" id="prospectPhone" placeholder="Ej: 947501990 (sin +56)" inputmode="tel"
-               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        
+        <input type="text" id="prospectPhone" placeholder="Ej: 947501990 (sin +56)" inputmode="tel" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Producto(s):</label>
-        <input type="text" id="prospectProduct" placeholder="Ej: Neumáticos 185/65R15"
-               style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
-        
+        <input type="text" id="prospectProduct" placeholder="Ej: Neumáticos 185/65R15" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Estado:</label>
         <select id="prospectStatus" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;">
           <option value="Falta contactar">Falta contactar</option>
@@ -1120,8 +1060,6 @@
           <option value="Contactado por llamada">Contactado por llamada</option>
           <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
         </select>
-        
-        <!-- NUEVAS ETIQUETAS RÁPIDAS -->
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Etiquetas importantes:</label>
         <div style="display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;">
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
@@ -1133,12 +1071,9 @@
             <span class="tag" style="background: #10b981; color: white;">💰 COTIZACIÓN</span>
           </label>
         </div>
-        
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Observación inicial (opcional):</label>
-        <textarea id="prospectObservation" placeholder="Notas importantes..." rows="3"
-                  style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;"></textarea>
+        <textarea id="prospectObservation" placeholder="Notas importantes..." rows="3" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 12px;"></textarea>
       </div>
-
       <div class="modal-buttons">
         <button class="btn btn-accent" onclick="saveProspect()">💾 Guardar Prospecto</button>
         <button class="btn btn-secondary" onclick="hideModal('addProspectModal')">✗ Cancelar</button>
@@ -1146,18 +1081,14 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL IMPORTAR CLIENTES ==================== -->
   <div id="importClientModal" class="modal">
     <div class="modal-content" style="max-width: 600px;">
       <div class="modal-title">📁 Importar Base de Clientes</div>
-      
       <div style="margin: 16px 0;">
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
           Sube un archivo Excel (.xlsx) o CSV (.csv) con la siguiente estructura:<br>
-          <strong>NombreApellido, Telefono, Producto, Estado, ObservacionInicial, ProximoContacto, Etiqueta</strong><br>
-          <em>Estado debe ser "Falta contactar" o "Contactado". ProximoContacto en formato DD/MM/AAAA.</em>
+          <strong>NombreApellido, Telefono, Producto, Estado, ObservacionInicial, ProximoContacto, Etiqueta</strong>
         </p>
-        
         <div class="file-upload-container">
           <div class="file-input-wrapper">
             <button class="file-input-button">📂 Seleccionar archivo Excel/CSV</button>
@@ -1165,7 +1096,6 @@
           </div>
           <div id="clientFileName" class="file-name">No se ha seleccionado ningún archivo</div>
         </div>
-        
         <div id="clientFilePreview" class="upload-preview" style="display: none; max-height: 300px;">
           <h4 style="color: var(--accent); margin-bottom: 8px; font-size: 14px;">Vista previa (primeras 10 filas):</h4>
           <table id="clientPreviewTable">
@@ -1180,11 +1110,9 @@
                 <th>Etiqueta</th>
               </tr>
             </thead>
-            <tbody id="clientPreviewBody">
-            </tbody>
+            <tbody id="clientPreviewBody"></tbody>
           </table>
         </div>
-        
         <div id="clientUploadStats" style="margin-top: 12px; display: none;">
           <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Resumen de importación:</div>
           <div style="font-size: 12px; color: var(--muted);">
@@ -1195,42 +1123,30 @@
           </div>
         </div>
       </div>
-
       <div class="modal-buttons">
-        <button class="btn btn-accent" onclick="processClientFile()" id="processClientBtn" disabled>
-          📥 Confirmar Importación
-        </button>
+        <button class="btn btn-accent" onclick="processClientFile()" id="processClientBtn" disabled>📥 Confirmar Importación</button>
         <button class="btn btn-secondary" onclick="hideModal('importClientModal')">✗ Cancelar</button>
       </div>
     </div>
   </div>
 
-  <!-- ==================== MODAL DETALLE PROSPECTO ==================== -->
   <div id="prospectDetailModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title" id="detailProspectName"></div>
-      
       <div style="margin: 16px 0;">
         <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <!-- SECCIÓN MODIFICADA: AHORA CON BOTÓN DE WHATSAPP -->
           <div style="display: flex; align-items: center; margin-bottom: 8px;">
             <div style="font-weight: 600; color: var(--accent); margin-right: 8px;">📞 Teléfono:</div>
             <div id="detailProspectPhone" style="flex: 1;"></div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-accent" onclick="callProspect()" style="padding: 6px 12px; font-size: 12px;">
-                📞 Llamar
-              </button>
-              <button class="btn btn-whatsapp" onclick="openWhatsApp()" style="padding: 6px 12px; font-size: 12px;">
-                💬 WhatsApp
-              </button>
+              <button class="btn btn-accent" onclick="callProspect()" style="padding: 6px 12px; font-size: 12px;">📞 Llamar</button>
+              <button class="btn btn-whatsapp" onclick="openWhatsApp()" style="padding: 6px 12px; font-size: 12px;">💬 WhatsApp</button>
             </div>
           </div>
-          
           <div style="margin-bottom: 8px;">
             <div style="font-weight: 600; color: var(--accent);">📦 Producto(s):</div>
             <div id="detailProspectProduct"></div>
           </div>
-          
           <div style="margin-bottom: 8px;">
             <div style="font-weight: 600; color: var(--accent);">📊 Estado:</div>
             <select id="detailProspectStatus" style="width: 100%; margin-top: 4px;">
@@ -1240,12 +1156,10 @@
               <option value="Contactado por WhatsApp y Llamada">Contactado por WhatsApp y Llamada</option>
             </select>
           </div>
-          
           <div style="margin-bottom: 8px;">
             <div style="font-weight: 600; color: var(--accent);">📅 Próximo contacto:</div>
             <input type="date" id="detailProspectNextContact" style="width: 100%; margin-top: 4px;">
           </div>
-          
           <div style="margin-bottom: 8px;">
             <div style="font-weight: 600; color: var(--accent);">🏷️ Etiquetas rápidas:</div>
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
@@ -1259,23 +1173,15 @@
             <div id="detailProspectTags" style="margin-top: 8px;"></div>
           </div>
         </div>
-        
         <div style="background: var(--card); border-radius: 8px; padding: 12px;">
           <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">📝 Historial de Observaciones:</div>
-          <div id="detailProspectObservations" style="max-height: 200px; overflow-y: auto;">
-            <!-- Observaciones se cargarán aquí -->
-          </div>
-          
+          <div id="detailProspectObservations" style="max-height: 200px; overflow-y: auto;"></div>
           <div style="margin-top: 12px;">
-            <textarea id="newObservation" placeholder="Agregar nueva observación..." rows="2"
-                      style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 8px;"></textarea>
-            <button class="btn btn-accent" onclick="addObservation()" style="width: 100%; padding: 8px;">
-              ➕ Agregar Observación
-            </button>
+            <textarea id="newObservation" placeholder="Agregar nueva observación..." rows="2" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; margin-bottom: 8px;"></textarea>
+            <button class="btn btn-accent" onclick="addObservation()" style="width: 100%; padding: 8px;">➕ Agregar Observación</button>
           </div>
         </div>
       </div>
-
       <div class="modal-buttons">
         <button class="btn btn-accent" onclick="saveProspectChanges()">💾 Guardar Cambios</button>
         <button class="btn btn-danger" onclick="confirmDeleteProspect()">🗑️ Eliminar</button>
@@ -1284,7 +1190,6 @@
     </div>
   </div>
 
-  <!-- Modals -->
   <div id="closeDayModal" class="modal">
     <div class="modal-content">
       <div class="modal-title">¿Confirmar cierre de día?</div>
@@ -1296,20 +1201,16 @@
     </div>
   </div>
 
-  <!-- NUEVO MODAL PARA CIERRE DE CICLO -->
   <div id="closeCycleModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title">📅 Cierre de Ciclo de Comisiones</div>
-      
       <div style="margin: 16px 0;">
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
-          Selecciona la fecha de cierre del ciclo actual. Se calcularán las comisiones de las ventas desde el último cierre hasta esta fecha.
+          Selecciona la fecha de cierre del ciclo actual.
         </p>
-        
         <div class="date-input-wrapper" style="margin-bottom: 16px;">
           <input type="date" id="cycleCloseDate" style="width: 100%;">
         </div>
-        
         <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
           <div style="color: var(--accent); font-weight: 600; margin-bottom: 8px;">Resumen del ciclo:</div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -1323,15 +1224,7 @@
             <div style="font-weight: 600; text-align: right;" id="cycleSummaryCount">0</div>
           </div>
         </div>
-        
-        <div style="background: rgba(220, 38, 38, 0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <div style="color: #dc2626; font-weight: 600; font-size: 13px; margin-bottom: 4px;">⚠️ Advertencia:</div>
-          <div style="font-size: 12px; color: #dc2626;">
-            Al cerrar el ciclo, se reiniciará el acumulado de comisiones. Las ventas posteriores a esta fecha se acumularán para el próximo ciclo.
-          </div>
-        </div>
       </div>
-
       <div class="modal-buttons">
         <button class="btn btn-accent" onclick="confirmCloseCycle()">✓ Confirmar Cierre</button>
         <button class="btn btn-secondary" onclick="hideModal('closeCycleModal')">✗ Cancelar</button>
@@ -1353,7 +1246,6 @@
   <div id="exportModal" class="modal">
     <div class="modal-content">
       <div class="modal-title">📊 Exportar a Excel</div>
-      
       <div style="margin: 16px 0;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Tipo de reporte:</label>
         <select id="exportType" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
@@ -1363,13 +1255,10 @@
           <option value="cycleHistory">Historial de Cierres</option>
         </select>
       </div>
-
       <div id="dateSelector" style="margin: 16px 0; display: none;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar:</label>
-        <select id="dateSelect" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
-        </select>
+        <select id="dateSelect" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;"></select>
       </div>
-
       <div class="modal-buttons">
         <button class="btn btn-accent" onclick="confirmExport()">📥 Exportar</button>
         <button class="btn btn-secondary" onclick="hideModal('exportModal')">✗ Cancelar</button>
@@ -1380,7 +1269,6 @@
   <div id="modifyModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title">✏️ Modificar Ventas</div>
-      
       <div style="margin: 16px 0;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Acción:</label>
         <select id="modifyAction" onchange="updateModifyAction()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
@@ -1389,17 +1277,14 @@
           <option value="search">🔍 Buscar en Historial</option>
         </select>
       </div>
-
       <div id="addSaleSection" style="margin: 16px 0;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Fecha de la venta:</label>
         <div class="date-input-wrapper">
           <input type="date" id="saleDate" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
         </div>
-        
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Monto con IVA:</label>
         <input type="text" id="saleAmount" placeholder="119000" inputmode="numeric" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px;">
       </div>
-
       <div id="deleteSaleSection" style="margin: 16px 0; display: none;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Período:</label>
         <select id="deletePeriod" onchange="updateDeleteList()" style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
@@ -1407,22 +1292,17 @@
           <option value="cycle">Ventas del Ciclo</option>
           <option value="permanent">Historial Permanente</option>
         </select>
-        
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Seleccionar venta a eliminar:</label>
-        <div id="salesListToDelete" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
-        </div>
+        <div id="salesListToDelete" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;"></div>
       </div>
-
       <div id="searchSaleSection" style="margin: 16px 0; display: none;">
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Buscar en Historial Permanente:</label>
         <input type="text" id="searchQuery" placeholder="Buscar por mes (ej: 2024-12) o monto..." style="width: 100%; padding: 12px; background: var(--bg); color: var(--text); border: 2px solid var(--border); border-radius: 8px; font-size: 14px; margin-bottom: 12px;">
-        
         <label style="display: block; margin-bottom: 8px; color: var(--accent); font-weight: 600;">Resultados:</label>
         <div id="searchResults" style="max-height: 200px; overflow-y: auto; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
           <div style="padding: 12px; color: var(--muted); text-align: center;">Ingrese un término de búsqueda</div>
         </div>
       </div>
-
       <div class="modal-buttons">
         <button class="btn btn-accent" onclick="confirmModify()">✓ Confirmar</button>
         <button class="btn btn-secondary" onclick="hideModal('modifyModal')">✗ Cancelar</button>
@@ -1430,18 +1310,15 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
   <script>
     const COMMISSION_RATE = 0.009;
     let deferredPrompt = null;
-    let dailyChartInstance = null;
-    let cycleHistoryChartInstance = null;
-    
-    // Variables para el archivo CSV
     let selectedFile = null;
     let csvData = [];
+    let currentProspectId = null;
+    let clientFileData = [];
+    let clientFileHeaders = [];
 
-    // ==================== FUNCIONES PARA CAMBIAR PANTALLAS ====================
     function showMainScreen() {
       document.getElementById('mainScreen').style.display = 'block';
       document.getElementById('analysisScreen').classList.remove('active');
@@ -1465,16 +1342,10 @@
       actualizarNombreVendedor();
     }
 
-    // ==================== FUNCIONES PARA PROSPECTOS ====================
-    let currentProspectId = null;
-    let clientFileData = [];
-    let clientFileHeaders = [];
-
     function getProspectsStorage() {
       try {
         const data = localStorage.getItem('prospectos');
-        const prospects = data ? JSON.parse(data) : [];
-        return prospects;
+        return data ? JSON.parse(data) : [];
       } catch (e) {
         console.error('Error leyendo prospectos:', e);
         return [];
@@ -1502,7 +1373,6 @@
       document.getElementById('prospectProduct').value = '';
       document.getElementById('prospectStatus').value = 'Falta contactar';
       document.getElementById('prospectObservation').value = '';
-      // Limpiar checkboxes
       document.getElementById('prospectTagTrabajo').checked = false;
       document.getElementById('prospectTagCotizacion').checked = false;
       showModal('addProspectModal');
@@ -1515,7 +1385,6 @@
       const status = document.getElementById('prospectStatus').value;
       const observation = document.getElementById('prospectObservation').value.trim();
       
-      // Obtener etiquetas seleccionadas
       const etiquetas = [];
       if (document.getElementById('prospectTagTrabajo').checked) {
         etiquetas.push('TRABAJO EN CURSO');
@@ -1531,7 +1400,6 @@
       
       const prospects = getProspectsStorage();
       
-      // Verificar si ya existe un prospecto con el mismo teléfono
       const existingProspect = prospects.find(p => p.telefono === phone);
       if (existingProspect) {
         alert('Ya existe un prospecto con este número de teléfono.');
@@ -1575,10 +1443,8 @@
         return;
       }
       
-      // Actualizar lista de productos para filtro
       updateProductFilter(prospects);
       
-      // Aplicar filtros adicionales
       const searchTerm = document.getElementById('searchProspect')?.value.toLowerCase() || '';
       const filterStatus = document.getElementById('filterStatus')?.value || '';
       const filterProduct = document.getElementById('filterProduct')?.value || '';
@@ -1607,7 +1473,6 @@
         div.className = 'prospect-item';
         div.onclick = () => showProspectDetail(prospect.id);
         
-        // Determinar clase CSS según el estado
         let statusClass = 'status-not-contacted';
         if (prospect.estado === 'Contactado por WhatsApp') {
           statusClass = 'status-whatsapp';
@@ -1623,7 +1488,6 @@
           ? prospect.observaciones[prospect.observaciones.length - 1].texto 
           : 'Sin observaciones';
         
-        // Mostrar etiquetas si tiene
         let etiquetasHTML = '';
         if (prospect.etiquetas && prospect.etiquetas.length > 0) {
           etiquetasHTML = `<span>🏷️ ${prospect.etiquetas.join(', ')}</span>`;
@@ -1640,11 +1504,8 @@
               <span>📝 ${lastObservation.substring(0, 30)}${lastObservation.length > 30 ? '...' : ''}</span>
             </div>
           </div>
-          <div style="color: var(--muted); font-size: 12px;">
-            👁️ Ver
-          </div>
+          <div style="color: var(--muted); font-size: 12px;">👁️ Ver</div>
         `;
-        
         container.appendChild(div);
       });
     }
@@ -1653,7 +1514,8 @@
       const filterProduct = document.getElementById('filterProduct');
       if (!filterProduct) return;
       
-      const products = [...new Set(prospects.map(p => p.producto).filter(p => p))];
+      const currentValue = filterProduct.value;
+      const products = [...new Set(prospects.map(p => p.producto))].filter(p => p);
       
       filterProduct.innerHTML = '<option value="">Todos los productos</option>';
       products.forEach(product => {
@@ -1662,6 +1524,10 @@
         option.textContent = product;
         filterProduct.appendChild(option);
       });
+      
+      if (products.includes(currentValue)) {
+        filterProduct.value = currentValue;
+      }
     }
 
     function filterProspects() {
@@ -1679,8 +1545,8 @@
 
     function updateProspectStats() {
       const prospects = getProspectsStorage();
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       
       const total = prospects.length;
       const pending = prospects.filter(p => p.estado === 'Falta contactar').length;
@@ -1710,7 +1576,6 @@
       document.getElementById('detailProspectStatus').value = prospect.estado;
       document.getElementById('detailProspectNextContact').value = prospect.proximoContacto || '';
       
-      // Cargar etiquetas
       const tagsContainer = document.getElementById('detailProspectTags');
       tagsContainer.innerHTML = '';
       if (prospect.etiquetas && prospect.etiquetas.length > 0) {
@@ -1724,14 +1589,12 @@
         });
       }
       
-      // Cargar observaciones
       const obsContainer = document.getElementById('detailProspectObservations');
       obsContainer.innerHTML = '';
       
       if (prospect.observaciones.length === 0) {
         obsContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted); font-style: italic;">No hay observaciones registradas.</div>';
       } else {
-        // Mostrar observaciones más recientes primero
         [...prospect.observaciones].reverse().forEach(obs => {
           const div = document.createElement('div');
           div.className = 'observation-item';
@@ -1744,7 +1607,6 @@
         });
       }
       
-      // Configurar eventos para etiquetas rápidas
       document.querySelectorAll('.tag[data-tag]').forEach(tag => {
         tag.onclick = function() {
           const tagText = this.getAttribute('data-tag');
@@ -1851,7 +1713,6 @@
       showToast('🗑️ Prospecto eliminado');
     }
 
-    // ==================== FUNCIONES PARA WHATSAPP Y NOMBRE VENDEDOR ====================
     function guardarNombreVendedor() {
       const nombreInput = document.getElementById('vendedorNombre');
       const nombre = nombreInput.value.trim();
@@ -1876,42 +1737,31 @@
       document.getElementById('nombreVendedorActual').textContent = nombre;
     }
     
-    // ==================== FUNCIONES CORREGIDAS PARA MÓVILES ====================
     function openWhatsApp() {
       const phone = document.getElementById('detailProspectPhone').textContent;
       const prospectName = document.getElementById('detailProspectName').textContent;
       const product = document.getElementById('detailProspectProduct').textContent;
       const vendedorNombre = obtenerNombreVendedor();
       
-      // Limpiar número de teléfono (eliminar espacios, guiones, etc.)
       const cleanPhone = phone.replace(/\D/g, '');
       
-      // Validar que el número tenga el formato correcto (9 dígitos para Chile)
       if (!cleanPhone || cleanPhone.length < 9) {
         alert('Número de teléfono inválido');
         return;
       }
       
-      // Mensaje predefinido que incluye nombre del cliente, vendedor y producto
       const message = encodeURIComponent(`Hola ${prospectName}, soy ${vendedorNombre} de Neumáticos y Llantas del Pacífico. Te contacto por tu interés en ${product}. ¿En qué puedo ayudarte?`);
       
-      // PARA WHATSAPP: Agregar el prefijo +56 al número (formato internacional)
       const whatsappPhone = '+56' + cleanPhone;
       
-      // Construir URL de WhatsApp
       const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${message}`;
       
-      // Ocultar el modal primero
       hideModal('prospectDetailModal');
       
-      // Pequeño delay para asegurar que el estado se guarde y el modal se cierre
       setTimeout(() => {
-        // Abrir WhatsApp - funciona tanto en móviles como en escritorio
         window.location.href = whatsappUrl;
         
-        // Fallback para escritorio si window.location no funciona
         setTimeout(() => {
-          // Si después de 500ms no se ha redirigido, intentar con window.open
           if (document.visibilityState === 'visible') {
             window.open(whatsappUrl, '_blank');
           }
@@ -1921,31 +1771,21 @@
 
     function callProspect() {
       const phone = document.getElementById('detailProspectPhone').textContent;
-      // PARA LLAMADA: Usar el número sin prefijo internacional (formato local)
       const cleanPhone = phone.replace(/\D/g, '');
       
-      // Validar que el número tenga el formato correcto
       if (!cleanPhone || cleanPhone.length < 9) {
         alert('Número de teléfono inválido');
         return;
       }
       
-      // Ocultar el modal primero
       hideModal('prospectDetailModal');
       
-      // CORRECCIÓN PARA MÓVILES: Usar window.location.href para el esquema tel:
-      // Esto funciona mejor en dispositivos móviles
-      // PARA LLAMADA: Usar el número sin +56 (formato local)
       const telUrl = `tel:${cleanPhone}`;
       
-      // Pequeño delay para asegurar que el estado se guarde y el modal se cierre
       setTimeout(() => {
-        // Llamar al prospecto - funciona en móviles
         window.location.href = telUrl;
         
-        // Fallback para escritorio
         setTimeout(() => {
-          // Si estamos en escritorio, mostrar mensaje
           if (document.visibilityState === 'visible') {
             alert(`En un dispositivo móvil, esto iniciaría una llamada a: ${cleanPhone}`);
           }
@@ -1953,7 +1793,6 @@
       }, 100);
     }
 
-    // ==================== FUNCIONES PARA IMPORTAR CLIENTES ====================
     function showImportClientModal() {
       showModal('importClientModal');
       resetClientImportForm();
@@ -1991,12 +1830,8 @@
           }
         };
         reader.readAsText(file, 'UTF-8');
-      } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        alert('⚠️ Importación de Excel requiere la biblioteca SheetJS. Para esta versión, por favor convierte tu archivo a CSV.');
-        resetClientImportForm();
-        return;
       } else {
-        alert('Formato de archivo no soportado. Use CSV o Excel.');
+        alert('Formato de archivo no soportado. Use CSV.');
         resetClientImportForm();
         return;
       }
@@ -2011,11 +1846,9 @@
         return;
       }
       
-      // Leer encabezados
       const headers = lines[0].split(',').map(h => h.trim());
       clientFileHeaders = headers;
       
-      // Verificar encabezados obligatorios
       const requiredHeaders = ['NombreApellido', 'Telefono', 'Producto', 'Estado'];
       const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
       
@@ -2025,7 +1858,6 @@
         return;
       }
       
-      // Parsear datos
       const data = [];
       let validRows = 0;
       let ignoredRows = 0;
@@ -2041,13 +1873,11 @@
           row[header] = cells[index] || '';
         });
         
-        // Validar datos mínimos
         if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
           ignoredRows++;
           continue;
         }
         
-        // Validar estado
         const validStatuses = ['Falta contactar', 'Contactado por WhatsApp', 'Contactado por llamada', 'Contactado por WhatsApp y Llamada'];
         if (!validStatuses.includes(row.Estado)) {
           ignoredRows++;
@@ -2060,10 +1890,8 @@
       
       clientFileData = data;
       
-      // Mostrar vista previa
       showClientPreview(data.slice(0, 10));
       
-      // Calcular duplicados
       const existingProspects = getProspectsStorage();
       const duplicateRows = data.filter(row => 
         existingProspects.some(p => p.telefono === row.Telefono)
@@ -2115,14 +1943,12 @@
       let ignored = 0;
       
       clientFileData.forEach(row => {
-        // Verificar duplicado por teléfono
         const existingProspect = prospects.find(p => p.telefono === row.Telefono);
         if (existingProspect) {
           duplicates++;
           return;
         }
         
-        // Validar datos mínimos
         if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
           ignored++;
           return;
@@ -2167,7 +1993,6 @@
       showToast(`📥 ${imported} prospectos importados`);
     }
 
-    // ==================== FUNCIÓN PARA EXPORTAR PROSPECTOS ====================
     function exportProspects() {
       const prospects = getProspectsStorage();
       
@@ -2196,7 +2021,6 @@
       showToast(`📤 ${prospects.length} prospectos exportados`);
     }
 
-    // ==================== FUNCIONES EXISTENTES (CON MODIFICACIONES) ====================
     function showUploadModal() {
       showModal('uploadModal');
       resetUploadForm();
@@ -2223,7 +2047,6 @@
       document.getElementById('fileName').textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
       document.getElementById('processBtn').disabled = false;
 
-      // Leer y previsualizar el archivo
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
@@ -2236,7 +2059,6 @@
             return;
           }
 
-          // Mostrar vista previa
           showPreview(csvData);
           showUploadStats(csvData);
         } catch (error) {
@@ -2254,7 +2076,6 @@
         return [];
       }
 
-      // Verificar si la primera línea es encabezado
       const firstLine = lines[0].toLowerCase();
       const hasHeader = firstLine.includes('fecha/hora') || firstLine.includes('monto') || firstLine.includes('comisión');
       
@@ -2265,7 +2086,6 @@
         const line = lines[i].trim();
         if (!line) continue;
 
-        // Manejar comillas y separadores
         const cells = [];
         let inQuotes = false;
         let currentCell = '';
@@ -2284,19 +2104,15 @@
         }
         cells.push(currentCell);
         
-        // Limpiar comillas y espacios
         const cleanCells = cells.map(cell => cell.replace(/"/g, '').trim());
         
         if (cleanCells.length >= 6) {
-          // Formato esperado: Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes
           const [fechaHoraStr, montoConIVARaw, netoSinIVARaw, comisionRaw, fechaStr, mesStr] = cleanCells;
           
-          // Convertir fechas
           const timestamp = parseDateString(fechaHoraStr);
           const dateIso = parseDateOnly(fechaStr);
           const monthId = mesStr;
           
-          // Convertir números y redondear a enteros
           const montoConIVA = Math.round(parseNumber(montoConIVARaw));
           const netoSinIVA = Math.round(parseNumber(netoSinIVARaw));
           const comision = Math.round(parseNumber(comisionRaw));
@@ -2309,7 +2125,6 @@
               commission: comision,
               fecha: fechaStr,
               mes: mesStr,
-              // Datos convertidos para el sistema
               timestamp: timestamp.toISOString(),
               date_iso: dateIso,
               month_id: monthId
@@ -2322,12 +2137,11 @@
     }
 
     function parseDateString(dateStr) {
-      // Formato esperado: "05/12/25 10:18" (DD/MM/YY HH:MM)
       const parts = dateStr.split(' ');
       if (parts.length !== 2) return new Date();
       
-      const datePart = parts[0]; // "05/12/25"
-      const timePart = parts[1]; // "10:18"
+      const datePart = parts[0];
+      const timePart = parts[1];
       
       const dateParts = datePart.split('/');
       if (dateParts.length !== 3) return new Date();
@@ -2344,7 +2158,6 @@
     }
 
     function parseDateOnly(dateStr) {
-      // Formato esperado: "04/12/25" (DD/MM/YY)
       const parts = dateStr.split('/');
       if (parts.length !== 3) return '';
       
@@ -2356,7 +2169,6 @@
     }
 
     function parseNumber(numStr) {
-      // Eliminar puntos de miles y convertir decimales
       const clean = numStr.replace(/\./g, '').replace(',', '.');
       return parseFloat(clean) || 0;
     }
@@ -2390,7 +2202,6 @@
       const totalRecords = data.length;
       const permanentSales = getStorage('ventas_permanentes');
       
-      // Buscar duplicados (misma fecha/hora y mismo monto)
       let newRecords = 0;
       data.forEach(row => {
         const isDuplicate = permanentSales.some(sale => 
@@ -2417,9 +2228,8 @@
       const salesCycle = getStorage('ventas_ciclo');
       const salesDay = getStorage('ventas_dia');
       const today = getCurrentDate();
-      const currentMonth = getCurrentMonth();
+      const currentCycle = getCurrentCycle();
       
-      // Asegurar arrays
       if (!Array.isArray(permanentSales)) setStorage('ventas_permanentes', []);
       if (!Array.isArray(salesCycle)) setStorage('ventas_ciclo', []);
       if (!Array.isArray(salesDay)) setStorage('ventas_dia', []);
@@ -2434,35 +2244,30 @@
       let duplicates = 0;
 
       csvData.forEach(row => {
-        // Verificar si ya existe (duplicado)
         const isDuplicate = permArr.some(sale => 
           sale.timestamp === row.timestamp && 
           sale.amount_with_vat === row.amount_with_vat
         );
 
         if (!isDuplicate) {
-          // Crear objeto de venta
           const sale = {
             amount_with_vat: row.amount_with_vat,
             net_without_vat: row.net_without_vat,
             commission: row.commission,
             timestamp: row.timestamp,
             date_iso: row.date_iso,
-            month_id: row.month_id
+            month_id: row.month_id,
+            cycle_id: getCycleFromDate(row.date_iso)
           };
 
-          // Siempre agregar al historial permanente
           permArr.push(sale);
           addedToPermanent++;
 
-          // Agregar a ventas del ciclo si es del ciclo actual
-          const lastCycleEnd = getStorage('ultimo_ciclo_fin');
-          if (!lastCycleEnd || new Date(sale.date_iso) >= new Date(lastCycleEnd)) {
+          if (getCycleFromDate(row.date_iso) === currentCycle) {
             cycleArr.push(sale);
             addedToCycle++;
           }
 
-          // Agregar a ventas del día si es del día actual
           if (row.date_iso === today) {
             dayArr.push(sale);
             addedToDay++;
@@ -2472,12 +2277,10 @@
         }
       });
 
-      // Guardar cambios
       setStorage('ventas_permanentes', permArr);
       setStorage('ventas_ciclo', cycleArr);
       setStorage('ventas_dia', dayArr);
 
-      // Mostrar resumen
       let message = `✅ Archivo procesado correctamente:\n\n`;
       message += `• Registros en CSV: ${csvData.length}\n`;
       message += `• Nuevos registros agregados: ${addedToPermanent}\n`;
@@ -2497,42 +2300,27 @@
       showToast(`✅ ${addedToPermanent} ventas importadas correctamente`);
     }
 
-    // ==================== CÁLCULO DE KPIs MODIFICADO ====================
     function calculateAndDisplayKPIs() {
       const permanentSales = getStorage('ventas_permanentes');
       const today = getCurrentDate();
+      const currentCycle = getCurrentCycle();
       
       const startOfWeek = getStartOfWeek();
-      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
       
-      // Ventas del día
       const daySales = permanentSales.filter(s => s.date_iso === today);
-      
-      // Ventas de la semana
       const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
+      const cycleSales = permanentSales.filter(s => s.cycle_id === currentCycle);
       
-      // Ventas del ciclo actual (desde último cierre hasta hoy)
-      let cycleSales = [];
-      if (lastCycleEnd) {
-        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd));
-      } else {
-        // Si no hay cierre anterior, todas las ventas son del ciclo actual
-        cycleSales = permanentSales;
-      }
-      
-      // Cálculos diarios
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
       const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
       
-      // Cálculos semanales
       const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const weekCount = weekSales.length;
       const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
       const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
       
-      // Cálculos del ciclo
       const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const cycleCount = cycleSales.length;
       const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
@@ -2554,7 +2342,6 @@
       document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
     }
 
-    // ==================== FUNCIONES AUXILIARES PARA KPIs ====================
     function getStartOfWeek() {
       const now = new Date();
       const day = now.getDay();
@@ -2574,99 +2361,6 @@
       return date >= start && date <= end;
     }
 
-    // ==================== FUNCIONES DE GESTIÓN DE CICLOS ====================
-    function showCloseCycleModal() {
-      // Obtener ventas del ciclo actual
-      const permanentSales = getStorage('ventas_permanentes');
-      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
-      
-      let cycleSales = [];
-      if (lastCycleEnd) {
-        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd));
-      } else {
-        cycleSales = permanentSales;
-      }
-      
-      // Calcular resumen del ciclo
-      const cycleWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
-      const cycleCount = cycleSales.length;
-      
-      // Establecer fecha por defecto (hoy)
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('cycleCloseDate').value = today;
-      
-      // Mostrar resumen
-      document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
-      document.getElementById('cycleSummaryWithoutVat').textContent = formatCLP(cycleWithoutVat);
-      document.getElementById('cycleSummaryCommission').textContent = formatCLP(cycleCommission);
-      document.getElementById('cycleSummaryCount').textContent = cycleCount;
-      
-      showModal('closeCycleModal');
-    }
-    
-    function confirmCloseCycle() {
-      const closeDate = document.getElementById('cycleCloseDate').value;
-      
-      if (!closeDate) {
-        alert('Por favor selecciona una fecha de cierre.');
-        return;
-      }
-      
-      // Obtener ventas del ciclo actual
-      const permanentSales = getStorage('ventas_permanentes');
-      const lastCycleEnd = getStorage('ultimo_ciclo_fin');
-      
-      let cycleSales = [];
-      if (lastCycleEnd) {
-        cycleSales = permanentSales.filter(s => new Date(s.date_iso) > new Date(lastCycleEnd) && new Date(s.date_iso) <= new Date(closeDate));
-      } else {
-        cycleSales = permanentSales.filter(s => new Date(s.date_iso) <= new Date(closeDate));
-      }
-      
-      // Calcular resumen del ciclo a cerrar
-      const cycleWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
-      const cycleCount = cycleSales.length;
-      
-      // Guardar historial de cierre
-      const cycleHistory = getStorage('historial_ciclos');
-      const newCycleRecord = {
-        fecha_cierre: closeDate,
-        fecha_inicio: lastCycleEnd || getStorage('primer_venta_fecha') || closeDate,
-        ventas_cantidad: cycleCount,
-        total_con_iva: cycleWithVat,
-        total_sin_iva: cycleWithoutVat,
-        comision_total: cycleCommission,
-        fecha_registro: new Date().toISOString()
-      };
-      
-      cycleHistory.push(newCycleRecord);
-      setStorage('historial_ciclos', cycleHistory);
-      
-      // Actualizar fecha del último cierre
-      setStorage('ultimo_ciclo_fin', closeDate);
-      
-      // Vaciar ventas del ciclo actual (las nuevas ventas se acumularán para el próximo ciclo)
-      setStorage('ventas_ciclo', []);
-      
-      // Mostrar mensaje de confirmación
-      let message = `✅ Ciclo cerrado correctamente:\n\n`;
-      message += `• Fecha de cierre: ${formatDateForExcel(closeDate)}\n`;
-      message += `• Ventas en el ciclo: ${cycleCount}\n`;
-      message += `• Total con IVA: ${formatCLP(cycleWithVat)}\n`;
-      message += `• Comisión total: ${formatCLP(cycleCommission)}\n`;
-      message += `\nA partir de mañana, las nuevas ventas se acumularán para el próximo ciclo.`;
-      
-      alert(message);
-      hideModal('closeCycleModal');
-      refreshUI();
-      showToast(`📅 Ciclo cerrado - Comisión: ${formatCLP(cycleCommission)}`);
-    }
-
-    // ==================== FUNCIONES EXISTENTES (SIN CAMBIOS) ====================
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -2689,7 +2383,6 @@
       navigator.serviceWorker.register(createServiceWorkerBlob()).then(() => {
         console.log('Service Worker registrado');
       }).catch((err) => {
-        // Evitar que errores de registro rompan el resto del script
         console.warn('No se pudo registrar Service Worker:', err);
       });
     }
@@ -2798,9 +2491,33 @@
       return now.toISOString().split('T')[0];
     }
 
-    function round2(x) {
-      // MODIFICADO: Redondear a número entero
-      return Math.round(x);
+    function getCurrentCycle() {
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      if (!lastClose) return 'C1';
+      
+      const today = new Date();
+      const lastCloseDate = new Date(lastClose);
+      const diffDays = Math.floor((today - lastCloseDate) / (1000 * 60 * 60 * 24));
+      
+      if (diffDays <= 15) {
+        return 'C1';
+      } else {
+        return 'C2';
+      }
+    }
+
+    function getCycleFromDate(dateString) {
+      const date = new Date(dateString);
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      
+      if (!lastClose) {
+        return 'C1';
+      }
+      
+      const lastCloseDate = new Date(lastClose);
+      const diffDays = Math.floor((date - lastCloseDate) / (1000 * 60 * 60 * 24));
+      
+      return diffDays <= 15 ? 'C1' : 'C2';
     }
 
     function addSale() {
@@ -2809,17 +2526,17 @@
       
       try {
         const amt = parseAmount(amountText);
-        // MODIFICADO: Redondear a números enteros
         const net = Math.round(amt / 1.19);
         const commission = Math.round(net * COMMISSION_RATE);
         
         const sale = {
-          amount_with_vat: Math.round(amt), // Entero
-          net_without_vat: net, // Entero
-          commission: commission, // Entero
+          amount_with_vat: Math.round(amt),
+          net_without_vat: net,
+          commission: commission,
           timestamp: new Date().toISOString(),
           date_iso: getCurrentDate(),
-          month_id: getCurrentMonth()
+          month_id: getCurrentDate().substring(0, 7),
+          cycle_id: getCurrentCycle()
         };
 
         const permanentSales = getStorage('ventas_permanentes');
@@ -2842,11 +2559,6 @@
       } catch (e) {
         alert(e.message);
       }
-    }
-
-    function getCurrentMonth() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
     function deleteLastSale() {
@@ -2918,6 +2630,40 @@
       showToast('✓ Día cerrado. Ventas del día vaciadas.');
     }
 
+    function closeCycle() {
+      const cycleDate = document.getElementById('cycleCloseDate').value;
+      if (!cycleDate) {
+        alert('Por favor selecciona una fecha de cierre');
+        return;
+      }
+      
+      localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
+      setStorage('ventas_ciclo', []);
+      setStorage('ventas_dia', []);
+      
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      const cycleSales = getStorage('ventas_permanentes').filter(s => 
+        s.cycle_id === getCurrentCycle() && new Date(s.date_iso) <= new Date(cycleDate)
+      );
+      
+      const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const totalCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      cycleHistory.push({
+        fecha_cierre: cycleDate,
+        ciclo: getCurrentCycle(),
+        ventas_count: cycleSales.length,
+        total_with_vat: totalWithVat,
+        total_without_vat: totalWithoutVat,
+        comision_total: totalCommission
+      });
+      
+      setStorage('historial_ciclos', cycleHistory);
+      refreshUI();
+      showToast('✓ Ciclo cerrado correctamente');
+    }
+
     function resetAll() {
       if (!confirm('⚠️ ¿Estás COMPLETAMENTE SEGURO? Se borrarán TODOS los datos de forma PERMANENTE.')) {
         return;
@@ -2925,8 +2671,10 @@
       setStorage('ventas_dia', []);
       setStorage('ventas_ciclo', []);
       setStorage('ventas_permanentes', []);
+      setStorage('prospectos', []);
+      localStorage.removeItem('ultimo_cierre_ciclo');
+      localStorage.removeItem('nombre_vendedor');
       setStorage('historial_ciclos', []);
-      localStorage.removeItem('ultimo_ciclo_fin');
       refreshUI();
       showToast('Sistema reseteado');
     }
@@ -2961,11 +2709,12 @@
       } else if (exportType === 'cycle') {
         dateSelector.style.display = 'block';
         const salesCycle = getStorage('ventas_ciclo');
+        const currentCycle = getCurrentCycle();
         
         if (salesCycle.length > 0) {
           const option = document.createElement('option');
-          option.value = 'current';
-          option.textContent = `Ciclo actual (${salesCycle.length} ventas)`; 
+          option.value = currentCycle;
+          option.textContent = `${currentCycle} (Ciclo actual - ${salesCycle.length} ventas)`; 
           dateSelect.appendChild(option);
         } else {
           const option = document.createElement('option');
@@ -2998,18 +2747,13 @@
         }
       } else if (exportType === 'cycleHistory') {
         dateSelector.style.display = 'block';
-        const cycleHistory = getStorage('historial_ciclos');
+        const cycleHistory = getStorage('historial_ciclos') || [];
         
         if (cycleHistory.length > 0) {
-          const allOption = document.createElement('option');
-          allOption.value = 'all';
-          allOption.textContent = 'Todos los cierres';
-          dateSelect.appendChild(allOption);
-          
-          cycleHistory.reverse().forEach((cycle, index) => {
+          cycleHistory.forEach((ciclo, index) => {
             const option = document.createElement('option');
             option.value = index;
-            option.textContent = `Cierre ${formatDateForExcel(cycle.fecha_cierre)} - ${formatCLP(cycle.comision_total)}`;
+            option.textContent = `Ciclo ${ciclo.ciclo} - ${ciclo.fecha_cierre} - ${formatCLP(ciclo.comision_total)}`;
             dateSelect.appendChild(option);
           });
         } else {
@@ -3039,11 +2783,12 @@
           filename = `ventas_dia_${selectedDate}.csv`;
         }
       } else if (exportType === 'cycle') {
+        const currentCycle = getCurrentCycle();
         const salesCycle = getStorage('ventas_ciclo');
         
-        if (selectedDate === 'current') {
-          data = salesCycle;
-          filename = `ventas_ciclo_actual_${getCurrentDate()}.csv`;
+        if (selectedDate === currentCycle) {
+          data = salesCycle.filter(s => s.cycle_id === currentCycle);
+          filename = `ventas_ciclo_${selectedDate}.csv`;
         }
       } else if (exportType === 'permanent') {
         const permanentSales = getStorage('ventas_permanentes');
@@ -3056,17 +2801,11 @@
           filename = `historial_permanente_${selectedDate}.csv`;
         }
       } else if (exportType === 'cycleHistory') {
-        const cycleHistory = getStorage('historial_ciclos');
-        
-        if (selectedDate === 'all') {
-          data = cycleHistory;
-          filename = 'historial_ciclos_completo.csv';
-        } else {
-          const index = parseInt(selectedDate);
-          if (!isNaN(index) && index >= 0 && index < cycleHistory.length) {
-            data = [cycleHistory[index]];
-            filename = `cierre_ciclo_${formatDateForExcel(data[0].fecha_cierre)}.csv`;
-          }
+        const cycleHistory = getStorage('historial_ciclos') || [];
+        if (selectedDate >= 0 && selectedDate < cycleHistory.length) {
+          const ciclo = cycleHistory[selectedDate];
+          data = [ciclo];
+          filename = `cierre_ciclo_${ciclo.ciclo}_${ciclo.fecha_cierre}.csv`;
         }
       }
       
@@ -3077,18 +2816,16 @@
       
       let csv = '';
       if (exportType === 'cycleHistory') {
-        // Exportar historial de cierres
-        csv = 'Fecha Cierre,Fecha Inicio,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total,Fecha Registro\n';
+        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total\n';
         data.forEach(c => {
-          csv += `"${formatDateForExcel(c.fecha_cierre)}","${formatDateForExcel(c.fecha_inicio)}",${c.ventas_cantidad},${c.total_con_iva},${c.total_sin_iva},${c.comision_total},"${formatDateTimeForExcel(c.fecha_registro)}"\n`;
+          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total}\n`;
         });
       } else {
-        // Exportar ventas
-        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes\n';
+        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo\n';
         data.forEach(s => {
           const timestamp = formatDateTimeForExcel(s.timestamp);
           const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
-          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}"\n`;
+          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}"\n`;
         });
       }
       
@@ -3142,7 +2879,9 @@
       if (period === 'day') {
         sales = getStorage('ventas_dia');
       } else if (period === 'cycle') {
-        sales = getStorage('ventas_ciclo');
+        const currentCycle = getCurrentCycle();
+        const allSales = getStorage('ventas_ciclo');
+        sales = allSales.filter(s => s.cycle_id === currentCycle);
       } else if (period === 'permanent') {
         sales = getStorage('ventas_permanentes');
       }
@@ -3199,9 +2938,11 @@
           const monthId = sale.month_id || '';
           const amount = sale.amount_with_vat.toString();
           const date = sale.date_iso || '';
+          const cycle = sale.cycle_id || '';
           return monthId.toLowerCase().includes(query) || 
                  amount.includes(query) ||
-                 date.toLowerCase().includes(query);
+                 date.toLowerCase().includes(query) ||
+                 cycle.toLowerCase().includes(query);
         });
       }
       
@@ -3226,7 +2967,7 @@
           <div style="flex: 1;">
             <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
             <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
-            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id}</div>
+            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id} | Ciclo: ${sale.cycle_id || getCurrentCycle()}</div>
           </div>
         `;
         
@@ -3269,8 +3010,10 @@
         }
         
       } else if (period === 'cycle') {
+        const currentCycle = getCurrentCycle();
         const salesCycle = getStorage('ventas_ciclo');
-        saleToDelete = salesCycle[index];
+        const cycleSales = salesCycle.filter(s => s.cycle_id === currentCycle);
+        saleToDelete = cycleSales[index];
         
         const permanentSales = getStorage('ventas_permanentes');
         const permIndex = permanentSales.findIndex(s => 
@@ -3282,8 +3025,14 @@
           setStorage('ventas_permanentes', permanentSales);
         }
         
-        salesCycle.splice(index, 1);
-        setStorage('ventas_ciclo', salesCycle);
+        const fullIndex = salesCycle.findIndex(s => 
+          s.timestamp === saleToDelete.timestamp && 
+          s.amount_with_vat === saleToDelete.amount_with_vat
+        );
+        if (fullIndex !== -1) {
+          salesCycle.splice(fullIndex, 1);
+          setStorage('ventas_ciclo', salesCycle);
+        }
         
         const today = getCurrentDate();
         if (saleToDelete.date_iso === today) {
@@ -3305,9 +3054,8 @@
         permanentSales.splice(index, 1);
         setStorage('ventas_permanentes', permanentSales);
         
-        // Verificar si está en el ciclo actual
-        const lastCycleEnd = getStorage('ultimo_ciclo_fin');
-        if (!lastCycleEnd || new Date(saleToDelete.date_iso) > new Date(lastCycleEnd)) {
+        const currentCycle = getCurrentCycle();
+        if (saleToDelete.cycle_id === currentCycle) {
           const salesCycle = getStorage('ventas_ciclo');
           const cycleIndex = salesCycle.findIndex(s => 
             s.timestamp === saleToDelete.timestamp && 
@@ -3357,7 +3105,6 @@
         
         try {
           const amt = parseAmount(amountInput);
-          // MODIFICADO: Redondear a números enteros
           const net = Math.round(amt / 1.19);
           const commission = Math.round(net * COMMISSION_RATE);
           
@@ -3368,21 +3115,21 @@
             String(now.getSeconds()).padStart(2, '0'));
           
           const sale = {
-            amount_with_vat: Math.round(amt), // Entero
-            net_without_vat: net, // Entero
-            commission: commission, // Entero
+            amount_with_vat: Math.round(amt),
+            net_without_vat: net,
+            commission: commission,
             timestamp: selectedDateTime.toISOString(),
             date_iso: dateInput,
-            month_id: dateInput.substring(0, 7)
+            month_id: dateInput.substring(0, 7),
+            cycle_id: getCycleFromDate(dateInput)
           };
           
           const permanentSales = getStorage('ventas_permanentes');
           permanentSales.push(sale);
           setStorage('ventas_permanentes', permanentSales);
           
-          // Agregar al ciclo si es posterior al último cierre
-          const lastCycleEnd = getStorage('ultimo_ciclo_fin');
-          if (!lastCycleEnd || new Date(dateInput) > new Date(lastCycleEnd)) {
+          const currentCycle = getCurrentCycle();
+          if (getCycleFromDate(dateInput) === currentCycle) {
             const salesCycle = getStorage('ventas_ciclo');
             salesCycle.push(sale);
             setStorage('ventas_ciclo', salesCycle);
@@ -3407,15 +3154,16 @@
     function refreshUI() {
       const salesDay = getStorage('ventas_dia');
       const salesCycle = getStorage('ventas_ciclo');
+      const currentCycle = getCurrentCycle();
+      const salesCurrentCycle = salesCycle.filter(s => s.cycle_id === currentCycle);
 
-      // MODIFICADO: Redondear todos los cálculos a enteros
       const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
       const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
       const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + s.commission, 0));
 
-      const cycleWithVat = Math.round(salesCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(salesCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(salesCycle.reduce((sum, s) => sum + s.commission, 0));
+      const cycleWithVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.commission, 0));
 
       document.getElementById('dayWithVat').textContent = formatCLP(dayWithVat);
       document.getElementById('dayWithoutVat').textContent = formatCLP(dayWithoutVat);
@@ -3425,9 +3173,31 @@
       document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
 
       renderSalesList('salesDay', salesDay.slice(-20).reverse());
-      renderSalesList('salesCycle', salesCycle.slice(-20).reverse());
+      renderSalesList('salesCycle', salesCurrentCycle.slice(-20).reverse());
 
-      renderCharts();
+      const cycleCloseDate = document.getElementById('cycleCloseDate');
+      if (cycleCloseDate) {
+        const today = new Date().toISOString().split('T')[0];
+        cycleCloseDate.value = today;
+        cycleCloseDate.min = today;
+      }
+
+      updateCycleSummary();
+    }
+
+    function updateCycleSummary() {
+      const currentCycle = getCurrentCycle();
+      const salesCurrentCycle = getStorage('ventas_ciclo').filter(s => s.cycle_id === currentCycle);
+      
+      const cycleWithVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.amount_with_vat, 0));
+      const cycleWithoutVat = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const cycleCommission = Math.round(salesCurrentCycle.reduce((sum, s) => sum + s.commission, 0));
+      const cycleCount = salesCurrentCycle.length;
+      
+      document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
+      document.getElementById('cycleSummaryWithoutVat').textContent = formatCLP(cycleWithoutVat);
+      document.getElementById('cycleSummaryCommission').textContent = formatCLP(cycleCommission);
+      document.getElementById('cycleSummaryCount').textContent = cycleCount;
     }
 
     function renderSalesList(elementId, sales) {
@@ -3454,6 +3224,11 @@
       showModal('closeDayModal');
     }
 
+    function showCloseCycleModal() {
+      showModal('closeCycleModal');
+      updateCycleSummary();
+    }
+
     function showResetModal() {
       showModal('resetModal');
     }
@@ -3468,201 +3243,20 @@
       hideModal('closeDayModal');
     }
 
+    function confirmCloseCycle() {
+      closeCycle();
+      hideModal('closeCycleModal');
+    }
+
     function confirmReset() {
       resetAll();
       hideModal('resetModal');
     }
 
-    function renderCharts() {
-      renderDailyChart();
-      renderCycleHistoryChart();
-    }
-
-    function renderDailyChart() {
-      const salesCycle = getStorage('ventas_ciclo');
-      
-      // Agrupar por día del ciclo actual
-      const dataMap = {};
-      
-      salesCycle.forEach(s => {
-        const day = new Date(s.date_iso).getDate();
-        dataMap[day] = (dataMap[day] || 0) + s.commission;
-      });
-
-      const days = Object.keys(dataMap).map(Number).sort((a, b) => a - b);
-      const values = days.map(d => Math.round(dataMap[d])); // Entero
-
-      if (days.length === 0) {
-        days.push(1);
-        values.push(0);
-      }
-
-      const ctx = document.getElementById('dailyChart');
-      if (dailyChartInstance) {
-        dailyChartInstance.destroy();
-      }
-
-      dailyChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: days,
-          datasets: [{
-            label: 'Comisión',
-            data: values,
-            backgroundColor: '#f7c600',
-            borderColor: '#d1a400',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return formatCLP(context.parsed.y);
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCLP(value);
-                },
-                color: '#999999'
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#999999'
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function renderCycleHistoryChart() {
-      const cycleHistory = getStorage('historial_ciclos');
-      
-      if (cycleHistory.length === 0) {
-        const ctx = document.getElementById('cycleHistoryChart');
-        if (cycleHistoryChartInstance) {
-          cycleHistoryChartInstance.destroy();
-        }
-        
-        cycleHistoryChartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Sin historial'],
-            datasets: [{
-              label: 'Comisión',
-              data: [0],
-              backgroundColor: '#111111',
-              borderColor: '#444444',
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                display: false
-              }
-            }
-          }
-        });
-        return;
-      }
-      
-      // Ordenar por fecha (más reciente primero para gráfico)
-      const sortedHistory = [...cycleHistory].sort((a, b) => 
-        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
-      ).slice(0, 10).reverse(); // Mostrar últimos 10 cierres
-      
-      const labels = sortedHistory.map(c => formatDateForExcel(c.fecha_cierre));
-      const values = sortedHistory.map(c => Math.round(c.comision_total));
-      
-      const ctx = document.getElementById('cycleHistoryChart');
-      if (cycleHistoryChartInstance) {
-        cycleHistoryChartInstance.destroy();
-      }
-
-      cycleHistoryChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Comisión por ciclo',
-            data: values,
-            backgroundColor: '#111111',
-            borderColor: '#444444',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return formatCLP(context.parsed.y);
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function(value) {
-                  return formatCLP(value);
-                },
-                color: '#999999'
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            },
-            x: {
-              ticks: {
-                color: '#999999',
-                maxRotation: 45,
-                minRotation: 45
-              },
-              grid: {
-                color: '#2a2a2a'
-              }
-            }
-          }
-        }
-      });
-    }
-
-    // ==================== EVENT LISTENERS ====================
     document.addEventListener('DOMContentLoaded', () => {
       const saleDateInput = document.getElementById('saleDate');
       if (saleDateInput) {
         saleDateInput.value = getCurrentDate();
-        // Asegurar que el input de fecha tenga el formato correcto para móviles
         saleDateInput.type = 'date';
       }
       
@@ -3693,25 +3287,17 @@
         });
       }
       
-      // Configurar búsqueda de prospectos
       const searchProspectInput = document.getElementById('searchProspect');
       if (searchProspectInput) {
         searchProspectInput.addEventListener('input', filterProspects);
       }
       
-      // Cargar nombre del vendedor al iniciar
       actualizarNombreVendedor();
       
-      // Inicializar storage si no existe
-      if (!getStorage('ventas_ciclo').length) setStorage('ventas_ciclo', []);
-      if (!getStorage('historial_ciclos').length) setStorage('historial_ciclos', []);
-      
       refreshUI();
-      // Inicializar estadísticas de prospectos si estamos en la pantalla de CRM
       updateProspectStats();
     });
 
-    // Manejo de enter y formateo en el input principal
     const amountInputElement = document.getElementById('amountInput');
     if (amountInputElement) {
       amountInputElement.addEventListener('keypress', (e) => {
@@ -3735,7 +3321,6 @@
       });
     }
 
-    // ==================== ENSURE INLINE ONCLICK HANDLERS WORK ====================
     (function exposeApiToWindow() {
       const apiNames = [
         'showMainScreen','showAnalysisScreen','showCRMScreen','showUploadModal','showModifyModal','showCloseDayModal','showCloseCycleModal',
@@ -3749,13 +3334,10 @@
           if (typeof window[name] === 'function') return;
           const fn = (typeof eval(name) === 'function') ? eval(name) : undefined;
           if (typeof fn === 'function') window[name] = fn;
-        } catch (e) {
-          // Silenciar errores de eval si la función no existe.
-        }
+        } catch (e) {}
       });
     })();
 
-    // Registro de errores para ayudar a diagnosticar problemas cuando algo no responde.
     window.addEventListener('error', (evt) => {
       console.error('Unhandled JS error:', evt.message, 'at', evt.filename + ':' + evt.lineno);
     });
