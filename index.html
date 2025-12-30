@@ -698,7 +698,7 @@
     }
     
     .btn-nuclear:hover {
-      background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1b 100%);
       box-shadow: 0 0 30px rgba(220, 38, 38, 0.8);
       transform: scale(1.02);
     }
@@ -852,6 +852,10 @@
     <div class="section-title">📆 Ventas del Ciclo Actual</div>
     <div class="sales-list" id="salesCycle"></div>
 
+    <!-- NUEVA SECCIÓN: HISTORIAL COMPLETO DE VENTAS -->
+    <div class="section-title">📋 Historial Completo de Ventas</div>
+    <div class="sales-list" id="salesHistory"></div>
+
     <div class="section-title">🔄 Resetear Sistema</div>
     <p style="color: #dc2626; font-size: 13px; margin-bottom: 12px;">
       ⚠️ <strong>PELIGRO:</strong> Esta acción eliminará TODOS los datos guardados.
@@ -931,29 +935,7 @@
       </div>
     </div>
 
-    <div class="section-title">📊 KPI Semanales</div>
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-period">SEMANA</div>
-        <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiWeekTotal">$ 0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">SEMANA</div>
-        <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiWeekCount">0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">SEMANA</div>
-        <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiWeekAverage">$ 0</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-period">SEMANA</div>
-        <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiWeekCommission">$ 0</div>
-      </div>
-    </div>
+    <!-- SE HA ELIMINADO LA SECCIÓN DE KPI SEMANALES -->
 
     <div class="section-title">📊 KPI Comparativo de Ciclos</div>
     <div class="kpi-grid">
@@ -1757,6 +1739,9 @@
       renderSalesList('salesDay', salesDay.slice().reverse()); // Mostrar TODAS del día
       renderSalesList('salesCycle', currentCycleSales.slice().reverse()); // Mostrar TODAS del ciclo
       
+      // RENDERIZAR HISTORIAL COMPLETO
+      renderAllSalesHistory();
+      
       updateCycleSummary();
     }
 
@@ -1786,6 +1771,55 @@
               </div>
               <div style="font-size: 11px; color: var(--muted);">
                 📅 ${dateTime}
+              </div>
+            </div>
+            <div style="text-align: right; min-width: 100px;">
+              <div style="font-size: 12px; color: var(--text);">
+                Neto: ${formatCLP(s.net_without_vat)}
+              </div>
+              <div style="font-size: 12px; color: var(--accent); font-weight: 600;">
+                Com: ${formatCLP(s.commission)}
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    /**
+     * NUEVA FUNCIÓN: RENDERIZAR HISTORIAL COMPLETO DE VENTAS
+     * Muestra TODAS las ventas permanentes ordenadas descendente
+     */
+    function renderAllSalesHistory() {
+      const permanentSales = getStorage('ventas_permanentes');
+      const container = document.getElementById('salesHistory');
+      container.innerHTML = '';
+      
+      if (permanentSales.length === 0) {
+        return; // El :empty CSS se encarga del mensaje
+      }
+      
+      // Ordenar por fecha descendente (más reciente primero)
+      const sortedSales = [...permanentSales].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+      );
+      
+      sortedSales.forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'sale-item';
+        
+        // Formato legible: "DD/MM/YYYY HH:MM"
+        const dateTime = formatDateTimeLegible(s.timestamp);
+        
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 600; color: var(--accent); margin-bottom: 2px;">
+                ${formatCLP(s.amount_with_vat)}
+              </div>
+              <div style="font-size: 11px; color: var(--muted);">
+                📅 ${dateTime} | 📆 ${s.date_iso} | 🔄 ${s.cycle_id || getCycleFromDate(s.date_iso)}
               </div>
             </div>
             <div style="text-align: right; min-width: 100px;">
@@ -2237,12 +2271,10 @@
     function calculateAndDisplayKPIs() {
       const permanentSales = getStorage('ventas_permanentes');
       const today = getCurrentDate();
-      const currentCycle = getCurrentCycle();
       
       const startOfWeek = getStartOfWeek();
       
       const daySales = permanentSales.filter(s => s.date_iso === today);
-      const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
       const currentCycleSales = getCurrentCycleSales();
       const previousCycleSales = getPreviousCycleSales();
       
@@ -2251,12 +2283,6 @@
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
       const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
-      
-      // Ventas de la semana
-      const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const weekCount = weekSales.length;
-      const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
-      const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
       
       // CICLO ACTUAL
       const currentCycleTotal = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
@@ -2275,12 +2301,6 @@
       document.getElementById('kpiDayCount').textContent = dayCount;
       document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
       document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
-      
-      // Actualizar KPI de la semana
-      document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
-      document.getElementById('kpiWeekCount').textContent = weekCount;
-      document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
-      document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
       
       // Actualizar KPI del ciclo actual
       document.getElementById('kpiCurrentCycleTotal').textContent = formatCLP(currentCycleTotal);
@@ -3595,7 +3615,7 @@
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
-      document.body.appendChild(toast);
+      document.body.appendChild(toot);
       setTimeout(() => toast.remove(), 2000);
     }
 
