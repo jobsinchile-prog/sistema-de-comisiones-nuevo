@@ -888,27 +888,70 @@
       </div>
     </div>
 
-    <div class="section-title">📊 KPI del Ciclo Actual</div>
+    <div class="section-title">📊 KPI Comparativo de Ciclos</div>
     <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+      <!-- CICLO ACTUAL -->
+      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
+        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
         <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiCycleTotal">$ 0</div>
+        <div class="kpi-value" id="kpiCurrentCycleTotal">$ 0</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
+        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
         <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiCycleCount">0</div>
+        <div class="kpi-value" id="kpiCurrentCycleCount">0</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
+        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
         <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiCycleAverage">$ 0</div>
+        <div class="kpi-value" id="kpiCurrentCycleAverage">$ 0</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
+        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
         <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiCycleCommission">$ 0</div>
+        <div class="kpi-value" id="kpiCurrentCycleCommission">$ 0</div>
+      </div>
+      
+      <!-- CICLO ANTERIOR CERRADO -->
+      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
+        <div class="kpi-title">Ventas Totales (sin IVA)</div>
+        <div class="kpi-value" id="kpiPreviousCycleTotal">$ 0</div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
+        <div class="kpi-title">Cantidad de Ventas</div>
+        <div class="kpi-value" id="kpiPreviousCycleCount">0</div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
+        <div class="kpi-title">Ticket Promedio</div>
+        <div class="kpi-value" id="kpiPreviousCycleAverage">$ 0</div>
+      </div>
+      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
+        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
+        <div class="kpi-title">Comisión Vendedor</div>
+        <div class="kpi-value" id="kpiPreviousCycleCommission">$ 0</div>
+      </div>
+    </div>
+
+    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--border);">
+      <div style="color: var(--accent); font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        📈 Comparativa vs Ciclo Anterior
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+        <div style="text-align: center;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Total</div>
+          <div id="comparisonTotal" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Ventas</div>
+          <div id="comparisonCount" style="font-size: 16px; font-weight: 700; color: var(--accent);">0</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Comisión</div>
+          <div id="comparisonCommission" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
+        </div>
       </div>
     </div>
 
@@ -1403,6 +1446,25 @@
         const saleDate = new Date(sale.date_iso);
         return saleDate <= lastCloseDate;
       });
+    }
+
+    /**
+     * Obtiene el resumen del último ciclo cerrado desde el historial
+     */
+    function getLastClosedCycleSummary() {
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      
+      if (cycleHistory.length === 0) {
+        return null;
+      }
+      
+      // Ordenar por fecha de cierre (más reciente primero)
+      const sortedHistory = cycleHistory.sort((a, b) => 
+        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
+      );
+      
+      // Devolver el último ciclo cerrado
+      return sortedHistory[0];
     }
 
     // ============================================
@@ -1998,37 +2060,89 @@
       
       const daySales = permanentSales.filter(s => s.date_iso === today);
       const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
-      const cycleSales = getCurrentCycleSales();
+      const currentCycleSales = getCurrentCycleSales();
+      const previousCycleSales = getPreviousCycleSales();
       
+      // Ventas del día
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
       const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
       
+      // Ventas de la semana
       const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const weekCount = weekSales.length;
       const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
       const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
       
-      const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCount = cycleSales.length;
-      const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
-      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      // CICLO ACTUAL
+      const currentCycleTotal = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const currentCycleCount = currentCycleSales.length;
+      const currentCycleAverage = currentCycleCount > 0 ? Math.round(currentCycleTotal / currentCycleCount) : 0;
+      const currentCycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
       
+      // CICLO ANTERIOR CERRADO
+      const previousCycleTotal = Math.round(previousCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const previousCycleCount = previousCycleSales.length;
+      const previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
+      const previousCycleCommission = Math.round(previousCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      
+      // Actualizar KPI del día
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
       document.getElementById('kpiDayCount').textContent = dayCount;
       document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
       document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
       
+      // Actualizar KPI de la semana
       document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
       document.getElementById('kpiWeekCount').textContent = weekCount;
       document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
       document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
       
-      document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
-      document.getElementById('kpiCycleCount').textContent = cycleCount;
-      document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
-      document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
+      // Actualizar KPI del ciclo actual
+      document.getElementById('kpiCurrentCycleTotal').textContent = formatCLP(currentCycleTotal);
+      document.getElementById('kpiCurrentCycleCount').textContent = currentCycleCount;
+      document.getElementById('kpiCurrentCycleAverage').textContent = formatCLP(currentCycleAverage);
+      document.getElementById('kpiCurrentCycleCommission').textContent = formatCLP(currentCycleCommission);
+      
+      // Actualizar KPI del ciclo anterior
+      document.getElementById('kpiPreviousCycleTotal').textContent = formatCLP(previousCycleTotal);
+      document.getElementById('kpiPreviousCycleCount').textContent = previousCycleCount;
+      document.getElementById('kpiPreviousCycleAverage').textContent = formatCLP(previousCycleAverage);
+      document.getElementById('kpiPreviousCycleCommission').textContent = formatCLP(previousCycleCommission);
+      
+      // Mostrar información adicional sobre el ciclo anterior
+      const lastCloseDate = localStorage.getItem('ultimo_cierre_ciclo');
+      if (lastCloseDate && previousCycleCount > 0) {
+        console.log(`Ciclo anterior cerrado el: ${lastCloseDate}`);
+      }
+      
+      // Cálculo comparativo
+      const totalDifference = currentCycleTotal - previousCycleTotal;
+      const countDifference = currentCycleCount - previousCycleCount;
+      const commissionDifference = currentCycleCommission - previousCycleCommission;
+
+      // Aplicar formato con signo
+      function formatWithSign(value) {
+        const sign = value >= 0 ? '+' : '';
+        return sign + formatCLP(value);
+      }
+
+      document.getElementById('comparisonTotal').textContent = formatWithSign(totalDifference);
+      document.getElementById('comparisonCount').textContent = countDifference >= 0 ? '+' + countDifference : countDifference;
+      document.getElementById('comparisonCommission').textContent = formatWithSign(commissionDifference);
+
+      // Aplicar colores según la diferencia
+      const comparisonElements = ['comparisonTotal', 'comparisonCount', 'comparisonCommission'];
+      comparisonElements.forEach(id => {
+        const element = document.getElementById(id);
+        const text = element.textContent;
+        if (text.startsWith('+')) {
+          element.style.color = '#10b981'; // Verde para positivo
+        } else if (text.startsWith('-')) {
+          element.style.color = '#dc2626'; // Rojo para negativo
+        }
+      });
     }
 
     function getStartOfWeek() {
