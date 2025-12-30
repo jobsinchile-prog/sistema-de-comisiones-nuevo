@@ -888,70 +888,27 @@
       </div>
     </div>
 
-    <div class="section-title">📊 KPI Comparativo de Ciclos</div>
+    <div class="section-title">📊 KPI del Ciclo Actual</div>
     <div class="kpi-grid">
-      <!-- CICLO ACTUAL -->
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiCurrentCycleTotal">$ 0</div>
+        <div class="kpi-value" id="kpiCycleTotal">$ 0</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiCurrentCycleCount">0</div>
+        <div class="kpi-value" id="kpiCycleCount">0</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiCurrentCycleAverage">$ 0</div>
+        <div class="kpi-value" id="kpiCycleAverage">$ 0</div>
       </div>
-      <div class="kpi-card" style="border-left: 4px solid var(--accent);">
-        <div class="kpi-period" style="color: var(--accent); font-weight: 700;">CICLO ACTUAL</div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO</div>
         <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiCurrentCycleCommission">$ 0</div>
-      </div>
-      
-      <!-- CICLO ANTERIOR CERRADO -->
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Ventas Totales (sin IVA)</div>
-        <div class="kpi-value" id="kpiPreviousCycleTotal">$ 0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Cantidad de Ventas</div>
-        <div class="kpi-value" id="kpiPreviousCycleCount">0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Ticket Promedio</div>
-        <div class="kpi-value" id="kpiPreviousCycleAverage">$ 0</div>
-      </div>
-      <div class="kpi-card" style="border-left: 4px solid #3b82f6;">
-        <div class="kpi-period" style="color: #3b82f6; font-weight: 700;">CICLO ANTERIOR</div>
-        <div class="kpi-title">Comisión Vendedor</div>
-        <div class="kpi-value" id="kpiPreviousCycleCommission">$ 0</div>
-      </div>
-    </div>
-
-    <div style="background: var(--card); border-radius: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--border);">
-      <div style="color: var(--accent); font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-        📈 Comparativa vs Ciclo Anterior
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Total</div>
-          <div id="comparisonTotal" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Ventas</div>
-          <div id="comparisonCount" style="font-size: 16px; font-weight: 700; color: var(--accent);">0</div>
-        </div>
-        <div style="text-align: center;">
-          <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;">Diferencia Comisión</div>
-          <div id="comparisonCommission" style="font-size: 16px; font-weight: 700; color: var(--accent);">$ 0</div>
-        </div>
+        <div class="kpi-value" id="kpiCycleCommission">$ 0</div>
       </div>
     </div>
 
@@ -1363,7 +1320,7 @@
     let clientFileHeaders = [];
 
     // ============================================
-    // FUNCIONES CRÍTICAS CORREGIDAS - LOGICA DE CICLOS
+    // FUNCIONES CRÍTICAS CORREGIDAS
     // ============================================
 
     /**
@@ -1372,23 +1329,20 @@
      *            fecha_venta > fecha_cierre -> Ciclo 2
      */
     function getCycleFromDate(dateString) {
-      const date = new Date(dateString);
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      if (!dateString) return 'C1';
       
-      if (!lastClose) {
-        return 'C1'; // Primer ciclo (no hay cierres anteriores)
-      }
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'C1';
+      
+      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      if (!lastClose) return 'C1';
       
       const lastCloseDate = new Date(lastClose);
-      lastCloseDate.setHours(23, 59, 59, 999); // Fin del día de cierre
+      lastCloseDate.setHours(23, 59, 59, 999);
       
       // CORRECCIÓN: Si la fecha de venta es <= fecha_cierre, va en C1
       // Si es > fecha_cierre, va en C2
-      if (date <= lastCloseDate) {
-        return 'C1';
-      } else {
-        return 'C2';
-      }
+      return date <= lastCloseDate ? 'C1' : 'C2';
     }
 
     /**
@@ -1410,19 +1364,19 @@
      */
     function getCurrentCycleSales() {
       const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      const permanentSales = getStorage('ventas_permanentes');
+      const permanentSales = getStorage('ventas_permanentes') || [];
       
-      if (!lastClose) {
-        // Si no hay cierre previo, todas las ventas están en C1
+      if (!lastClose || permanentSales.length === 0) {
         return permanentSales;
       }
       
       const lastCloseDate = new Date(lastClose);
       lastCloseDate.setHours(23, 59, 59, 999);
       
-      // Solo ventas POSTERIORES al último cierre
       return permanentSales.filter(sale => {
+        if (!sale.date_iso) return true;
         const saleDate = new Date(sale.date_iso);
+        if (isNaN(saleDate.getTime())) return true;
         return saleDate > lastCloseDate;
       });
     }
@@ -1432,39 +1386,21 @@
      */
     function getPreviousCycleSales() {
       const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      const permanentSales = getStorage('ventas_permanentes');
+      const permanentSales = getStorage('ventas_permanentes') || [];
       
-      if (!lastClose) {
-        return []; // No hay ciclo anterior
+      if (!lastClose || permanentSales.length === 0) {
+        return [];
       }
       
       const lastCloseDate = new Date(lastClose);
       lastCloseDate.setHours(23, 59, 59, 999);
       
-      // Ventas hasta el día de cierre inclusive
       return permanentSales.filter(sale => {
+        if (!sale.date_iso) return false;
         const saleDate = new Date(sale.date_iso);
+        if (isNaN(saleDate.getTime())) return false;
         return saleDate <= lastCloseDate;
       });
-    }
-
-    /**
-     * Obtiene el resumen del último ciclo cerrado desde el historial
-     */
-    function getLastClosedCycleSummary() {
-      const cycleHistory = getStorage('historial_ciclos') || [];
-      
-      if (cycleHistory.length === 0) {
-        return null;
-      }
-      
-      // Ordenar por fecha de cierre (más reciente primero)
-      const sortedHistory = cycleHistory.sort((a, b) => 
-        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
-      );
-      
-      // Devolver el último ciclo cerrado
-      return sortedHistory[0];
     }
 
     // ============================================
@@ -1537,6 +1473,7 @@
     function formatDateForExcel(isoString) {
       if (!isoString) return '';
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) return '';
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = String(date.getFullYear()).slice(-2);
@@ -1546,6 +1483,7 @@
     function formatDateTimeForExcel(isoString) {
       if (!isoString) return '';
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) return '';
       const day = String(date.getDate()).padStart(2, '0');
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = String(date.getFullYear()).slice(-2);
@@ -1574,31 +1512,27 @@
           timestamp: new Date().toISOString(),
           date_iso: getCurrentDate(),
           month_id: getCurrentDate().substring(0, 7),
-          cycle_id: getCycleFromDate(getCurrentDate()) // Usa la lógica corregida
+          cycle_id: getCycleFromDate(getCurrentDate())
         };
 
-        // Agregar a ventas permanentes
         const permanentSales = getStorage('ventas_permanentes');
         permanentSales.push(sale);
         setStorage('ventas_permanentes', permanentSales);
 
-        // Agregar a ciclo actual si corresponde
-        if (getCurrentCycle() === sale.cycle_id) {
+        const currentCycle = getCurrentCycle();
+        if (sale.cycle_id === currentCycle) {
           const salesCycle = getStorage('ventas_ciclo');
           salesCycle.push(sale);
           setStorage('ventas_ciclo', salesCycle);
         }
 
-        // Agregar a ventas del día
         const salesDay = getStorage('ventas_dia');
         salesDay.push(sale);
         setStorage('ventas_dia', salesDay);
 
-        if (input.value) {
-          input.value = '';
-          refreshUI();
-          showToast('✓ Venta agregada correctamente');
-        }
+        input.value = '';
+        refreshUI();
+        showToast('✓ Venta agregada correctamente');
       } catch (e) {
         alert(e.message);
       }
@@ -1619,7 +1553,6 @@
         return;
       }
       
-      // Eliminar de ventas permanentes
       const permanentSales = getStorage('ventas_permanentes');
       const permIndex = permanentSales.findIndex(s => 
         s.timestamp === lastSale.timestamp && 
@@ -1630,11 +1563,9 @@
         setStorage('ventas_permanentes', permanentSales);
       }
       
-      // Eliminar de ventas del día
       salesDay.pop();
       setStorage('ventas_dia', salesDay);
       
-      // Eliminar de ciclo si corresponde
       const salesCycle = getStorage('ventas_ciclo');
       const cycleIndex = salesCycle.findIndex(s => 
         s.timestamp === lastSale.timestamp && 
@@ -1651,15 +1582,15 @@
 
     function refreshUI() {
       const salesDay = getStorage('ventas_dia');
-      const currentCycleSales = getCurrentCycleSales(); // Usa función corregida
+      const currentCycleSales = getCurrentCycleSales();
       
-      const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + s.commission, 0));
+      const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + (s.amount_with_vat || 0), 0));
+      const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const dayCommission = Math.round(salesDay.reduce((sum, s) => sum + (s.commission || 0), 0));
       
-      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.amount_with_vat || 0), 0));
+      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
       document.getElementById('dayWithVat').textContent = formatCLP(dayWithVat);
       document.getElementById('dayWithoutVat').textContent = formatCLP(dayWithoutVat);
@@ -1668,8 +1599,8 @@
       document.getElementById('cycleWithoutVat').textContent = formatCLP(cycleWithoutVat);
       document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
       
-      renderSalesList('salesDay', salesDay.slice(-20).reverse());
-      renderSalesList('salesCycle', currentCycleSales.slice(-20).reverse());
+      renderSalesList('salesDay', salesDay.slice().reverse());
+      renderSalesList('salesCycle', currentCycleSales.slice().reverse());
       
       updateCycleSummary();
     }
@@ -1677,17 +1608,23 @@
     function renderSalesList(elementId, sales) {
       const container = document.getElementById(elementId);
       container.innerHTML = '';
+      
+      if (sales.length === 0) {
+        return;
+      }
+      
       sales.forEach((s, i) => {
         const div = document.createElement('div');
         div.className = 'sale-item';
-        const time = s.timestamp.substring(0, 16).replace('T', ' ');
-        div.textContent = `${i + 1}. ${formatCLP(s.amount_with_vat)} | Neto: ${formatCLP(s.net_without_vat)} | Com: ${formatCLP(s.commission)} | ${time}`;
+        const time = s.timestamp ? s.timestamp.substring(0, 16).replace('T', ' ') : 'Sin fecha';
+        const date = s.date_iso || 'Sin fecha';
+        div.textContent = `${i + 1}. ${formatCLP(s.amount_with_vat)} | Neto: ${formatCLP(s.net_without_vat)} | Com: ${formatCLP(s.commission)} | ${date} ${time.substring(11)}`;
         container.appendChild(div);
       });
     }
 
     // ============================================
-    // FUNCIONES DE CIERRE DE CICLO (CORREGIDAS)
+    // FUNCIONES DE CIERRE DE CICLO
     // ============================================
 
     function showCloseCycleModal() {
@@ -1704,9 +1641,9 @@
     function updateCycleSummary() {
       const currentCycleSales = getCurrentCycleSales();
       
-      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleWithVat = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.amount_with_vat || 0), 0));
+      const cycleWithoutVat = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const cycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       const cycleCount = currentCycleSales.length;
       
       document.getElementById('cycleSummaryWithVat').textContent = formatCLP(cycleWithVat);
@@ -1722,27 +1659,28 @@
         return;
       }
       
-      // Guardar fecha de cierre
       localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
       
-      // Obtener ventas del ciclo que se está cerrando (hasta la fecha de cierre)
-      const cycleSales = getCurrentCycleSales().filter(sale => {
+      const currentCycleSales = getCurrentCycleSales();
+      const closeDate = new Date(cycleDate);
+      closeDate.setHours(23, 59, 59, 999);
+      
+      const cycleSalesToClose = currentCycleSales.filter(sale => {
+        if (!sale.date_iso) return false;
         const saleDate = new Date(sale.date_iso);
-        const closeDate = new Date(cycleDate);
-        closeDate.setHours(23, 59, 59, 999);
+        if (isNaN(saleDate.getTime())) return false;
         return saleDate <= closeDate;
       });
       
-      // Guardar historial del ciclo
       const cycleHistory = getStorage('historial_ciclos') || [];
-      const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
-      const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const totalCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const totalWithVat = Math.round(cycleSalesToClose.reduce((sum, s) => sum + (s.amount_with_vat || 0), 0));
+      const totalWithoutVat = Math.round(cycleSalesToClose.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const totalCommission = Math.round(cycleSalesToClose.reduce((sum, s) => sum + (s.commission || 0), 0));
       
       cycleHistory.push({
         fecha_cierre: cycleDate,
         ciclo: getCurrentCycle(),
-        ventas_count: cycleSales.length,
+        ventas_count: cycleSalesToClose.length,
         total_with_vat: totalWithVat,
         total_without_vat: totalWithoutVat,
         comision_total: totalCommission
@@ -1750,10 +1688,8 @@
       
       setStorage('historial_ciclos', cycleHistory);
       
-      // Limpiar ventas del ciclo actual (se recrearán con getCurrentCycleSales)
       setStorage('ventas_ciclo', []);
       
-      // Vaciar ventas del día
       setStorage('ventas_dia', []);
       
       hideModal('closeCycleModal');
@@ -1761,14 +1697,19 @@
       showToast('✓ Ciclo cerrado correctamente');
     }
 
-    function closeDay() {
+    function showCloseDayModal() {
+      showModal('closeDayModal');
+    }
+
+    function confirmCloseDay() {
       setStorage('ventas_dia', []);
+      hideModal('closeDayModal');
       refreshUI();
       showToast('✓ Día cerrado. Ventas del día vaciadas.');
     }
 
     // ============================================
-    // FUNCIONES DE IMPORTACIÓN CSV (CORREGIDAS)
+    // FUNCIONES DE IMPORTACIÓN CSV CORREGIDAS
     // ============================================
 
     function showUploadModal() {
@@ -1836,24 +1777,7 @@
         const line = lines[i].trim();
         if (!line) continue;
 
-        const cells = [];
-        let inQuotes = false;
-        let currentCell = '';
-        
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
-          
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cells.push(currentCell);
-            currentCell = '';
-          } else {
-            currentCell += char;
-          }
-        }
-        cells.push(currentCell);
-        
+        const cells = parseCSVLine(line);
         const cleanCells = cells.map(cell => cell.replace(/"/g, '').trim());
         
         if (cleanCells.length >= 6) {
@@ -1877,7 +1801,8 @@
               mes: mesStr,
               timestamp: timestamp.toISOString(),
               date_iso: dateIso,
-              month_id: monthId
+              month_id: monthId,
+              cycle_id: getCycleFromDate(dateIso)
             });
           }
         }
@@ -1886,7 +1811,31 @@
       return data;
     }
 
+    function parseCSVLine(line) {
+      const cells = [];
+      let inQuotes = false;
+      let currentCell = '';
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          cells.push(currentCell);
+          currentCell = '';
+        } else {
+          currentCell += char;
+        }
+      }
+      cells.push(currentCell);
+      
+      return cells;
+    }
+
     function parseDateString(dateStr) {
+      if (!dateStr) return new Date();
+      
       const parts = dateStr.split(' ');
       if (parts.length !== 2) return new Date();
       
@@ -1896,18 +1845,20 @@
       const dateParts = datePart.split('/');
       if (dateParts.length !== 3) return new Date();
       
-      const day = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]) - 1;
-      const year = 2000 + parseInt(dateParts[2]);
+      const day = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1;
+      const year = 2000 + parseInt(dateParts[2], 10);
       
       const timeParts = timePart.split(':');
-      const hours = timeParts.length >= 1 ? parseInt(timeParts[0]) : 0;
-      const minutes = timeParts.length >= 2 ? parseInt(timeParts[1]) : 0;
+      const hours = timeParts.length >= 1 ? parseInt(timeParts[0], 10) : 0;
+      const minutes = timeParts.length >= 2 ? parseInt(timeParts[1], 10) : 0;
       
       return new Date(year, month, day, hours, minutes);
     }
 
     function parseDateOnly(dateStr) {
+      if (!dateStr) return '';
+      
       const parts = dateStr.split('/');
       if (parts.length !== 3) return '';
       
@@ -1919,6 +1870,7 @@
     }
 
     function parseNumber(numStr) {
+      if (!numStr) return 0;
       const clean = numStr.replace(/\./g, '').replace(',', '.');
       return parseFloat(clean) || 0;
     }
@@ -1953,12 +1905,20 @@
       const permanentSales = getStorage('ventas_permanentes');
       
       let newRecords = 0;
+      let duplicates = 0;
+      
       data.forEach(row => {
         const isDuplicate = permanentSales.some(sale => 
           sale.timestamp === row.timestamp && 
-          sale.amount_with_vat === row.amount_with_vat
+          sale.amount_with_vat === row.amount_with_vat &&
+          sale.net_without_vat === row.net_without_vat
         );
-        if (!isDuplicate) newRecords++;
+        
+        if (isDuplicate) {
+          duplicates++;
+        } else {
+          newRecords++;
+        }
       });
       
       document.getElementById('totalRecords').textContent = totalRecords;
@@ -1986,13 +1946,11 @@
       csvData.forEach(row => {
         const isDuplicate = permanentSales.some(sale => 
           sale.timestamp === row.timestamp && 
-          sale.amount_with_vat === row.amount_with_vat
+          sale.amount_with_vat === row.amount_with_vat &&
+          sale.net_without_vat === row.net_without_vat
         );
 
         if (!isDuplicate) {
-          // CORRECCIÓN: Usar getCycleFromDate() para determinar el ciclo
-          const cycleId = getCycleFromDate(row.date_iso);
-          
           const sale = {
             amount_with_vat: row.amount_with_vat,
             net_without_vat: row.net_without_vat,
@@ -2000,21 +1958,19 @@
             timestamp: row.timestamp,
             date_iso: row.date_iso,
             month_id: row.month_id,
-            cycle_id: cycleId
+            cycle_id: getCycleFromDate(row.date_iso)
           };
 
           permanentSales.push(sale);
           addedToPermanent++;
 
-          // Agregar al ciclo actual si corresponde
-          if (cycleId === currentCycle) {
+          if (sale.cycle_id === currentCycle) {
             const salesCycle = getStorage('ventas_ciclo');
             salesCycle.push(sale);
             setStorage('ventas_ciclo', salesCycle);
             addedToCycle++;
           }
 
-          // Agregar a ventas del día si corresponde
           if (row.date_iso === today) {
             const salesDay = getStorage('ventas_dia');
             salesDay.push(sale);
@@ -2060,89 +2016,37 @@
       
       const daySales = permanentSales.filter(s => s.date_iso === today);
       const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
-      const currentCycleSales = getCurrentCycleSales();
-      const previousCycleSales = getPreviousCycleSales();
+      const cycleSales = getCurrentCycleSales();
       
-      // Ventas del día
-      const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const dayTotal = Math.round(daySales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
-      const dayCommission = Math.round(daySales.reduce((sum, s) => sum + s.commission, 0));
+      const dayCommission = Math.round(daySales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
-      // Ventas de la semana
-      const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
       const weekCount = weekSales.length;
       const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
-      const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + s.commission, 0));
+      const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
-      // CICLO ACTUAL
-      const currentCycleTotal = Math.round(currentCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const currentCycleCount = currentCycleSales.length;
-      const currentCycleAverage = currentCycleCount > 0 ? Math.round(currentCycleTotal / currentCycleCount) : 0;
-      const currentCycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const cycleCount = cycleSales.length;
+      const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
+      const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
-      // CICLO ANTERIOR CERRADO
-      const previousCycleTotal = Math.round(previousCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const previousCycleCount = previousCycleSales.length;
-      const previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
-      const previousCycleCommission = Math.round(previousCycleSales.reduce((sum, s) => sum + s.commission, 0));
-      
-      // Actualizar KPI del día
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
       document.getElementById('kpiDayCount').textContent = dayCount;
       document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
       document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
       
-      // Actualizar KPI de la semana
       document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
       document.getElementById('kpiWeekCount').textContent = weekCount;
       document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
       document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
       
-      // Actualizar KPI del ciclo actual
-      document.getElementById('kpiCurrentCycleTotal').textContent = formatCLP(currentCycleTotal);
-      document.getElementById('kpiCurrentCycleCount').textContent = currentCycleCount;
-      document.getElementById('kpiCurrentCycleAverage').textContent = formatCLP(currentCycleAverage);
-      document.getElementById('kpiCurrentCycleCommission').textContent = formatCLP(currentCycleCommission);
-      
-      // Actualizar KPI del ciclo anterior
-      document.getElementById('kpiPreviousCycleTotal').textContent = formatCLP(previousCycleTotal);
-      document.getElementById('kpiPreviousCycleCount').textContent = previousCycleCount;
-      document.getElementById('kpiPreviousCycleAverage').textContent = formatCLP(previousCycleAverage);
-      document.getElementById('kpiPreviousCycleCommission').textContent = formatCLP(previousCycleCommission);
-      
-      // Mostrar información adicional sobre el ciclo anterior
-      const lastCloseDate = localStorage.getItem('ultimo_cierre_ciclo');
-      if (lastCloseDate && previousCycleCount > 0) {
-        console.log(`Ciclo anterior cerrado el: ${lastCloseDate}`);
-      }
-      
-      // Cálculo comparativo
-      const totalDifference = currentCycleTotal - previousCycleTotal;
-      const countDifference = currentCycleCount - previousCycleCount;
-      const commissionDifference = currentCycleCommission - previousCycleCommission;
-
-      // Aplicar formato con signo
-      function formatWithSign(value) {
-        const sign = value >= 0 ? '+' : '';
-        return sign + formatCLP(value);
-      }
-
-      document.getElementById('comparisonTotal').textContent = formatWithSign(totalDifference);
-      document.getElementById('comparisonCount').textContent = countDifference >= 0 ? '+' + countDifference : countDifference;
-      document.getElementById('comparisonCommission').textContent = formatWithSign(commissionDifference);
-
-      // Aplicar colores según la diferencia
-      const comparisonElements = ['comparisonTotal', 'comparisonCount', 'comparisonCommission'];
-      comparisonElements.forEach(id => {
-        const element = document.getElementById(id);
-        const text = element.textContent;
-        if (text.startsWith('+')) {
-          element.style.color = '#10b981'; // Verde para positivo
-        } else if (text.startsWith('-')) {
-          element.style.color = '#dc2626'; // Rojo para negativo
-        }
-      });
+      document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
+      document.getElementById('kpiCycleCount').textContent = cycleCount;
+      document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
+      document.getElementById('kpiCycleCommission').textContent = formatCLP(cycleCommission);
     }
 
     function getStartOfWeek() {
@@ -2156,8 +2060,14 @@
     }
 
     function isDateInWeek(dateString, startOfWeek) {
+      if (!dateString) return false;
+      
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) return false;
+      
       const start = new Date(startOfWeek);
+      if (isNaN(start.getTime())) return false;
+      
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
       
@@ -2165,7 +2075,7 @@
     }
 
     // ============================================
-    // FUNCIONES CRM (SIN CAMBIOS)
+    // FUNCIONES CRM
     // ============================================
 
     function getProspectsStorage() {
@@ -2631,10 +2541,6 @@
       document.getElementById(id).classList.remove('active');
     }
 
-    function showCloseDayModal() {
-      showModal('closeDayModal');
-    }
-
     function showResetModal() {
       showModal('resetModal');
     }
@@ -2652,11 +2558,6 @@
       updateModifyAction();
     }
 
-    function confirmCloseDay() {
-      closeDay();
-      hideModal('closeDayModal');
-    }
-
     function confirmReset() {
       if (!confirm('⚠️ ¿Estás COMPLETAMENTE SEGURO? Se borrarán TODOS los datos de forma PERMANENTE.')) {
         return;
@@ -2668,8 +2569,10 @@
       localStorage.removeItem('ultimo_cierre_ciclo');
       localStorage.removeItem('nombre_vendedor');
       setStorage('historial_ciclos', []);
+      hideModal('resetModal');
       refreshUI();
-      showToast('Sistema reseteado');
+      loadProspects();
+      showToast('✅ Sistema reseteado completamente');
     }
 
     // ============================================
@@ -2701,12 +2604,11 @@
       } else if (exportType === 'cycle') {
         dateSelector.style.display = 'block';
         const cycleSales = getCurrentCycleSales();
-        const currentCycle = getCurrentCycle();
         
         if (cycleSales.length > 0) {
           const option = document.createElement('option');
-          option.value = currentCycle;
-          option.textContent = `${currentCycle} (Ciclo actual - ${cycleSales.length} ventas)`; 
+          option.value = 'current';
+          option.textContent = `Ciclo actual (${cycleSales.length} ventas)`; 
           dateSelect.appendChild(option);
         } else {
           const option = document.createElement('option');
@@ -2768,20 +2670,11 @@
       
       if (exportType === 'day') {
         const salesDay = getStorage('ventas_dia');
-        const today = getCurrentDate();
-        
-        if (selectedDate === today) {
-          data = salesDay;
-          filename = `ventas_dia_${selectedDate}.csv`;
-        }
+        data = salesDay;
+        filename = `ventas_dia_${getCurrentDate()}.csv`;
       } else if (exportType === 'cycle') {
-        const currentCycle = getCurrentCycle();
-        const cycleSales = getCurrentCycleSales();
-        
-        if (selectedDate === currentCycle) {
-          data = cycleSales;
-          filename = `ventas_ciclo_${selectedDate}.csv`;
-        }
+        data = getCurrentCycleSales();
+        filename = `ventas_ciclo_actual_${getCurrentDate()}.csv`;
       } else if (exportType === 'permanent') {
         const permanentSales = getStorage('ventas_permanentes');
         
@@ -2817,7 +2710,7 @@
         data.forEach(s => {
           const timestamp = formatDateTimeForExcel(s.timestamp);
           const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
-          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}"\n`;
+          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCycleFromDate(s.date_iso)}"\n`;
         });
       }
       
@@ -2921,14 +2814,14 @@
       
       if (query) {
         filteredSales = permanentSales.filter(sale => {
-          const monthId = sale.month_id || '';
-          const amount = sale.amount_with_vat.toString();
-          const date = sale.date_iso || '';
-          const cycle = sale.cycle_id || '';
-          return monthId.toLowerCase().includes(query) || 
+          const monthId = (sale.month_id || '').toLowerCase();
+          const amount = (sale.amount_with_vat || '').toString();
+          const date = (sale.date_iso || '').toLowerCase();
+          const cycle = (sale.cycle_id || '').toLowerCase();
+          return monthId.includes(query) || 
                  amount.includes(query) ||
-                 date.toLowerCase().includes(query) ||
-                 cycle.toLowerCase().includes(query);
+                 date.includes(query) ||
+                 cycle.includes(query);
         });
       }
       
@@ -2953,7 +2846,7 @@
           <div style="flex: 1;">
             <div style="font-weight: 600; color: var(--accent);">${formatCLP(sale.amount_with_vat)}</div>
             <div style="font-size: 12px; color: var(--muted);">${time} | Com: ${formatCLP(sale.commission)}</div>
-            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id} | Ciclo: ${sale.cycle_id || getCurrentCycle()}</div>
+            <div style="font-size: 11px; color: #666; margin-top: 4px;">Fecha: ${sale.date_iso} | Mes: ${sale.month_id} | Ciclo: ${sale.cycle_id || getCycleFromDate(sale.date_iso)}</div>
           </div>
         `;
         
@@ -3060,7 +2953,7 @@
             timestamp: selectedDateTime.toISOString(),
             date_iso: dateInput,
             month_id: dateInput.substring(0, 7),
-            cycle_id: getCycleFromDate(dateInput) // Usa lógica corregida
+            cycle_id: getCycleFromDate(dateInput)
           };
           
           const permanentSales = getStorage('ventas_permanentes');
@@ -3069,8 +2962,9 @@
           
           const currentCycle = getCurrentCycle();
           if (getCycleFromDate(dateInput) === currentCycle) {
-            const cycleSales = getCurrentCycleSales();
-            // No necesitamos guardar en ventas_ciclo porque se calcula dinámicamente
+            const salesCycle = getStorage('ventas_ciclo');
+            salesCycle.push(sale);
+            setStorage('ventas_ciclo', salesCycle);
           }
           
           const today = getCurrentDate();
@@ -3090,7 +2984,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE IMPORTACIÓN CLIENTES (SIN CAMBIOS)
+    // FUNCIONES DE IMPORTACIÓN CLIENTES
     // ============================================
 
     function showImportClientModal() {
@@ -3166,11 +3060,11 @@
         const line = lines[i].trim();
         if (!line) continue;
         
-        const cells = line.split(',').map(c => c.trim());
+        const cells = parseCSVLine(line);
         const row = {};
         
         headers.forEach((header, index) => {
-          row[header] = cells[index] || '';
+          row[header] = (cells[index] || '').replace(/"/g, '').trim();
         });
         
         if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
@@ -3412,7 +3306,7 @@
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
-      document.body.appendChild(toast);
+      document.body.appendChild(toot);
       setTimeout(() => toast.remove(), 2000);
     }
 
@@ -3489,22 +3383,41 @@
     }
 
     // Exponer funciones al scope global
-    (function exposeApiToWindow() {
-      const apiNames = [
-        'showMainScreen','showAnalysisScreen','showCRMScreen','showUploadModal','showModifyModal','showCloseDayModal','showCloseCycleModal',
-        'showResetModal','showExportModal','addSale','deleteLastSale','saveProspect','showAddProspectModal','showImportClientModal',
-        'processClientFile','exportProspects','guardarNombreVendedor','openWhatsApp','callProspect','confirmCloseDay','confirmCloseCycle',
-        'confirmReset','confirmExport','confirmModify','saveProspectChanges','confirmDeleteProspect','showProspectDetail','filterProspects',
-        'resetFilters','handleFileSelect','handleClientFileSelect','processCSVFile','processClientFile','hideModal','showModal'
-      ];
-      apiNames.forEach(name => {
-        try {
-          if (typeof window[name] === 'function') return;
-          const fn = (typeof eval(name) === 'function') ? eval(name) : undefined;
-          if (typeof fn === 'function') window[name] = fn;
-        } catch (e) {}
-      });
-    })();
+    window.showMainScreen = showMainScreen;
+    window.showAnalysisScreen = showAnalysisScreen;
+    window.showCRMScreen = showCRMScreen;
+    window.showUploadModal = showUploadModal;
+    window.showModifyModal = showModifyModal;
+    window.showCloseDayModal = showCloseDayModal;
+    window.showCloseCycleModal = showCloseCycleModal;
+    window.showResetModal = showResetModal;
+    window.showExportModal = showExportModal;
+    window.addSale = addSale;
+    window.deleteLastSale = deleteLastSale;
+    window.saveProspect = saveProspect;
+    window.showAddProspectModal = showAddProspectModal;
+    window.showImportClientModal = showImportClientModal;
+    window.processClientFile = processClientFile;
+    window.exportProspects = exportProspects;
+    window.guardarNombreVendedor = guardarNombreVendedor;
+    window.openWhatsApp = openWhatsApp;
+    window.callProspect = callProspect;
+    window.confirmCloseDay = confirmCloseDay;
+    window.confirmCloseCycle = confirmCloseCycle;
+    window.confirmReset = confirmReset;
+    window.confirmExport = confirmExport;
+    window.confirmModify = confirmModify;
+    window.saveProspectChanges = saveProspectChanges;
+    window.confirmDeleteProspect = confirmDeleteProspect;
+    window.showProspectDetail = showProspectDetail;
+    window.filterProspects = filterProspects;
+    window.resetFilters = resetFilters;
+    window.handleFileSelect = handleFileSelect;
+    window.handleClientFileSelect = handleClientFileSelect;
+    window.processCSVFile = processCSVFile;
+    window.hideModal = hideModal;
+    window.showModal = showModal;
+    window.installApp = installApp;
 
     window.addEventListener('error', (evt) => {
       console.error('Unhandled JS error:', evt.message, 'at', evt.filename + ':' + evt.lineno);
