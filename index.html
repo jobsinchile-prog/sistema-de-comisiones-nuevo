@@ -888,25 +888,50 @@
       </div>
     </div>
 
+    <!-- ✅ SECCIÓN AGREGADA: KPI DEL CICLO ANTERIOR -->
+    <div class="section-title">📊 KPI del Ciclo Anterior</div>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO ANTERIOR</div>
+        <div class="kpi-title">Ventas Totales (sin IVA)</div>
+        <div class="kpi-value" id="kpiPrevCycleTotal">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO ANTERIOR</div>
+        <div class="kpi-title">Cantidad de Ventas</div>
+        <div class="kpi-value" id="kpiPrevCycleCount">0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO ANTERIOR</div>
+        <div class="kpi-title">Ticket Promedio</div>
+        <div class="kpi-value" id="kpiPrevCycleAverage">$ 0</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-period">CICLO ANTERIOR</div>
+        <div class="kpi-title">Comisión Vendedor</div>
+        <div class="kpi-value" id="kpiPrevCycleCommission">$ 0</div>
+      </div>
+    </div>
+
     <div class="section-title">📊 KPI del Ciclo Actual</div>
     <div class="kpi-grid">
       <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+        <div class="kpi-period">CICLO ACTUAL</div>
         <div class="kpi-title">Ventas Totales (sin IVA)</div>
         <div class="kpi-value" id="kpiCycleTotal">$ 0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+        <div class="kpi-period">CICLO ACTUAL</div>
         <div class="kpi-title">Cantidad de Ventas</div>
         <div class="kpi-value" id="kpiCycleCount">0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+        <div class="kpi-period">CICLO ACTUAL</div>
         <div class="kpi-title">Ticket Promedio</div>
         <div class="kpi-value" id="kpiCycleAverage">$ 0</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-period">CICLO</div>
+        <div class="kpi-period">CICLO ACTUAL</div>
         <div class="kpi-title">Comisión Vendedor</div>
         <div class="kpi-value" id="kpiCycleCommission">$ 0</div>
       </div>
@@ -996,6 +1021,7 @@
     </div>
   </div>
 
+  <!-- Los modales se mantienen igual -->
   <div id="uploadModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <div class="modal-title">📁 Subir Archivo CSV</div>
@@ -2017,32 +2043,51 @@
       const daySales = permanentSales.filter(s => s.date_iso === today);
       const weekSales = permanentSales.filter(s => isDateInWeek(s.date_iso, startOfWeek));
       const cycleSales = getCurrentCycleSales();
+      const prevCycleSales = getPreviousCycleSales();
       
+      // KPI Diarios
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
       const dayCount = daySales.length;
       const dayAverage = dayCount > 0 ? Math.round(dayTotal / dayCount) : 0;
       const dayCommission = Math.round(daySales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
+      // KPI Semanales
       const weekTotal = Math.round(weekSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
       const weekCount = weekSales.length;
       const weekAverage = weekCount > 0 ? Math.round(weekTotal / weekCount) : 0;
       const weekCommission = Math.round(weekSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
+      // ✅ KPI Ciclo Anterior (AGREGADO)
+      const prevCycleTotal = Math.round(prevCycleSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
+      const prevCycleCount = prevCycleSales.length;
+      const prevCycleAverage = prevCycleCount > 0 ? Math.round(prevCycleTotal / prevCycleCount) : 0;
+      const prevCycleCommission = Math.round(prevCycleSales.reduce((sum, s) => sum + (s.commission || 0), 0));
+      
+      // KPI Ciclo Actual
       const cycleTotal = Math.round(cycleSales.reduce((sum, s) => sum + (s.net_without_vat || 0), 0));
       const cycleCount = cycleSales.length;
       const cycleAverage = cycleCount > 0 ? Math.round(cycleTotal / cycleCount) : 0;
       const cycleCommission = Math.round(cycleSales.reduce((sum, s) => sum + (s.commission || 0), 0));
       
+      // Diarios
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
       document.getElementById('kpiDayCount').textContent = dayCount;
       document.getElementById('kpiDayAverage').textContent = formatCLP(dayAverage);
       document.getElementById('kpiDayCommission').textContent = formatCLP(dayCommission);
       
+      // Semanales
       document.getElementById('kpiWeekTotal').textContent = formatCLP(weekTotal);
       document.getElementById('kpiWeekCount').textContent = weekCount;
       document.getElementById('kpiWeekAverage').textContent = formatCLP(weekAverage);
       document.getElementById('kpiWeekCommission').textContent = formatCLP(weekCommission);
       
+      // ✅ Ciclo Anterior (AGREGADO)
+      document.getElementById('kpiPrevCycleTotal').textContent = formatCLP(prevCycleTotal);
+      document.getElementById('kpiPrevCycleCount').textContent = prevCycleCount;
+      document.getElementById('kpiPrevCycleAverage').textContent = formatCLP(prevCycleAverage);
+      document.getElementById('kpiPrevCycleCommission').textContent = formatCLP(prevCycleCommission);
+      
+      // Ciclo Actual
       document.getElementById('kpiCycleTotal').textContent = formatCLP(cycleTotal);
       document.getElementById('kpiCycleCount').textContent = cycleCount;
       document.getElementById('kpiCycleAverage').textContent = formatCLP(cycleAverage);
@@ -3306,7 +3351,7 @@
         z-index: 10000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       `;
-      document.body.appendChild(toot);
+      document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 2000);
     }
 
