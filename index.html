@@ -749,7 +749,7 @@
     @keyframes nuclear-pulse {
       0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
       70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38,38, 0); }
     }
     
     @media (max-width: 768px) {
@@ -848,6 +848,7 @@
       <button class="btn btn-info" onclick="showCRMScreen()">Gestión de Clientes</button>
       <button class="btn btn-secondary" onclick="showExportModal()">Exportar Ventas</button>
       <button class="btn btn-info" onclick="showUploadModal()">Subir Archivos Ventas</button>
+      <button class="btn btn-info" onclick="showManageCycleHistoryModal()">📅 Gestionar Cierres</button>
     </div>
 
     <div class="section-title">📅 Ventas del Día</div>
@@ -909,6 +910,50 @@
     </div>
   </div>
 
+  <!-- NUEVO MODAL PARA GESTIONAR HISTORIAL DE CIERRES -->
+  <div id="manageCycleHistoryModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-title">📅 Gestionar Historial de Cierres de Ciclo</div>
+      <div style="margin: 16px 0;">
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
+          Aquí puedes agregar manualmente fechas de cierre de ciclos anteriores.<br>
+          Útil cuando se reinicia el sistema y se importa historial completo de ventas.
+        </p>
+        
+        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 8px;">➕ Agregar Fecha de Cierre</div>
+          <div class="date-input-wrapper" style="margin-bottom: 8px;">
+            <input type="date" id="newCycleCloseDate" style="width: 100%;">
+          </div>
+          <button class="btn btn-accent" onclick="addManualCycleClose()" style="width: 100%;">Agregar Cierre</button>
+        </div>
+        
+        <div style="background: var(--card); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 8px;">📋 Historial de Cierres</div>
+          <div id="cycleHistoryList" style="max-height: 200px; overflow-y: auto;">
+            <div style="padding: 20px; text-align: center; color: var(--muted); font-style: italic;">
+              No hay cierres registrados
+            </div>
+          </div>
+        </div>
+        
+        <div style="background: rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; border: 1px solid #3b82f6;">
+          <div style="color: #3b82f6; font-weight: 600; margin-bottom: 8px;">💡 Información</div>
+          <p style="font-size: 12px; color: var(--muted); line-height: 1.4;">
+            Cada fecha de cierre divide el historial en ciclos:<br>
+            • Ventas ≤ fecha_cierre → Ciclo anterior<br>
+            • Ventas > fecha_cierre → Ciclo siguiente<br>
+            Los ciclos se numeran automáticamente (C1, C2, C3...)
+          </p>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-accent" onclick="recalculateAllCycles()">🔄 Recalcular Ciclos</button>
+        <button class="btn btn-secondary" onclick="hideModal('manageCycleHistoryModal')">✗ Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="analysisScreen" class="analysis-screen">
     <div class="header">
       <h2>Análisis de Ventas</h2>
@@ -938,8 +983,6 @@
         <div class="kpi-value" id="kpiDayCommission">$ 0</div>
       </div>
     </div>
-
-    <!-- SE HA ELIMINADO LA SECCIÓN DE KPI SEMANALES -->
 
     <div class="section-title">📊 KPI Comparativo de Ciclos</div>
     <div class="kpi-grid">
@@ -1098,7 +1141,7 @@
       <div style="margin: 16px 0;">
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 12px;">
           Sube un archivo CSV con el siguiente formato:<br>
-          <strong>Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes</strong>
+          <strong>Fecha/Hora, Monto con IVA, Neto sin IVA, Comisión, Fecha, Mes, Ciclo</strong>
         </p>
         <div class="file-upload-container">
           <div class="file-input-wrapper">
@@ -1118,6 +1161,7 @@
                 <th>Comisión</th>
                 <th>Fecha</th>
                 <th>Mes</th>
+                <th>Ciclo</th>
               </tr>
             </thead>
             <tbody id="previewBody"></tbody>
@@ -1419,46 +1463,33 @@
     // SISTEMA DE NAVEGACIÓN INTERNA
     // ============================================
     
-    // Historial de navegación
     let navigationHistory = [];
     let currentNavigationIndex = -1;
     
-    // Configuración de navegación
     const APP_SCREENS = {
       MAIN: 'mainScreen',
       ANALYSIS: 'analysisScreen',
       CRM: 'crmScreen'
     };
     
-    // Estado actual de la pantalla
     let currentScreen = APP_SCREENS.MAIN;
     
-    /**
-     * Inicializar sistema de navegación
-     */
     function initializeNavigation() {
-      // Agregar pantalla principal al historial
       navigationHistory.push(APP_SCREENS.MAIN);
       currentNavigationIndex = 0;
       
-      // Configurar evento de popstate para navegación del navegador
       window.addEventListener('popstate', function(event) {
         event.preventDefault();
         
-        // Si hay historial interno, navegar hacia atrás en la app
         if (currentNavigationIndex > 0) {
           goBackInApp();
         } else {
-          // Mostrar mensaje de confirmación antes de salir
           if (confirm('¿Desea salir de la aplicación?')) {
-            // Salir de la app (solo si es PWA instalada)
             if (window.matchMedia('(display-mode: standalone)').matches || 
                 window.navigator.standalone === true) {
-              // En PWA, prevenir salida
               pushState();
               showToast('Presione nuevamente para salir');
             } else {
-              // En navegador, permitir salida
               window.history.go(-1);
             }
           } else {
@@ -1467,26 +1498,16 @@
         }
       });
       
-      // Configurar estado inicial
       pushState();
     }
     
-    /**
-     * Agregar estado al historial del navegador
-     */
     function pushState() {
       const state = { screen: currentScreen, index: currentNavigationIndex };
       window.history.pushState(state, '', '#app-' + currentScreen);
     }
     
-    /**
-     * Navegar a una pantalla específica
-     */
     function navigateToScreen(screenId) {
-      // Guardar pantalla actual en historial
       if (currentNavigationIndex < navigationHistory.length - 1) {
-        // Si estamos navegando desde un punto intermedio del historial,
-        // eliminamos las pantallas posteriores
         navigationHistory = navigationHistory.slice(0, currentNavigationIndex + 1);
       }
       
@@ -1494,42 +1515,28 @@
       currentNavigationIndex = navigationHistory.length - 1;
       currentScreen = screenId;
       
-      // Actualizar interfaz
       showScreen(screenId);
-      
-      // Actualizar historial del navegador
       pushState();
     }
     
-    /**
-     * Navegar hacia atrás dentro de la app
-     */
     function goBackInApp() {
       if (currentNavigationIndex > 0) {
         currentNavigationIndex--;
         const previousScreen = navigationHistory[currentNavigationIndex];
         currentScreen = previousScreen;
         
-        // Actualizar interfaz
         showScreen(previousScreen);
-        
-        // Actualizar historial del navegador
         pushState();
         return true;
       }
       return false;
     }
     
-    /**
-     * Mostrar pantalla específica
-     */
     function showScreen(screenId) {
-      // Ocultar todas las pantallas
       document.getElementById('mainScreen').style.display = 'none';
       document.getElementById('analysisScreen').classList.remove('active');
       document.getElementById('crmScreen').classList.remove('active');
       
-      // Mostrar pantalla solicitada
       if (screenId === APP_SCREENS.MAIN) {
         document.getElementById('mainScreen').style.display = 'block';
         refreshUI();
@@ -1546,170 +1553,135 @@
       currentScreen = screenId;
     }
     
-    /**
-     * Manejar clic en botón atrás del dispositivo
-     */
     function handleBackButton() {
-      // Primero verificar si hay modales abiertos
       const openModals = document.querySelectorAll('.modal.active');
       if (openModals.length > 0) {
-        // Cerrar el último modal abierto
         const lastModal = openModals[openModals.length - 1];
         lastModal.classList.remove('active');
         return true;
       }
       
-      // Si no hay modales, navegar hacia atrás en la app
       return goBackInApp();
     }
-    
+
     // ============================================
-    // FUNCIONES CRÍTICAS CORREGIDAS - LOGICA DE CICLOS
+    // NUEVO SISTEMA DE GESTIÓN DE CICLOS MEJORADO
     // ============================================
 
     /**
-     * Obtiene el ciclo correcto para una fecha específica
-     * BASADO EN: fecha_venta <= fecha_cierre -> Ciclo 1
-     *            fecha_venta > fecha_cierre -> Ciclo 2
+     * Obtiene TODAS las fechas de cierre ordenadas cronológicamente
+     */
+    function getAllCycleClosureDates() {
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      return cycleHistory
+        .map(c => c.fecha_cierre)
+        .filter(Boolean)
+        .sort((a, b) => new Date(a) - new Date(b));
+    }
+
+    /**
+     * Determina el ciclo de una venta basado en todas las fechas de cierre
      */
     function getCycleFromDate(dateString) {
-      const date = new Date(dateString);
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      const closureDates = getAllCycleClosureDates();
       
-      if (!lastClose) {
-        return 'C1'; // Primer ciclo (no hay cierres anteriores)
+      if (closureDates.length === 0) {
+        return 'C1'; // Primer ciclo si no hay cierres
       }
       
-      const lastCloseDate = new Date(lastClose);
-      lastCloseDate.setHours(23, 59, 59, 999); // Fin del día de cierre
+      const saleDate = new Date(dateString);
       
-      // CORRECCIÓN: Si la fecha de venta es <= fecha_cierre, va en C1
-      // Si es > fecha_cierre, va en C2
-      if (date <= lastCloseDate) {
-        return 'C1';
-      } else {
-        return 'C2';
+      // Encontrar el último cierre anterior o igual a la fecha de venta
+      let cycleNumber = 1;
+      for (let i = 0; i < closureDates.length; i++) {
+        const closureDate = new Date(closureDates[i]);
+        closureDate.setHours(23, 59, 59, 999);
+        
+        if (saleDate <= closureDate) {
+          return `C${cycleNumber}`;
+        }
+        cycleNumber++;
       }
+      
+      // Si la venta es posterior a todos los cierres
+      return `C${cycleNumber}`;
     }
 
     /**
-     * Determina el ciclo actual basado en la fecha de hoy vs último cierre
+     * Obtiene el ciclo actual basado en la fecha de hoy
      */
     function getCurrentCycle() {
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      if (!lastClose) return 'C1';
-      
-      const today = new Date();
-      const lastCloseDate = new Date(lastClose);
-      lastCloseDate.setHours(23, 59, 59, 999);
-      
-      return today <= lastCloseDate ? 'C1' : 'C2';
+      const today = new Date().toISOString().split('T')[0];
+      return getCycleFromDate(today);
     }
 
     /**
-     * Obtiene TODAS las ventas del ciclo actual (posteriores al último cierre)
-     * SIN LIMITE - TODAS LAS VENTAS
+     * Obtiene todas las ventas de un ciclo específico
+     */
+    function getSalesByCycle(cycleId) {
+      const permanentSales = getStorage('ventas_permanentes');
+      return permanentSales.filter(sale => 
+        sale.cycle_id === cycleId || getCycleFromDate(sale.date_iso) === cycleId
+      );
+    }
+
+    /**
+     * Obtiene las ventas del ciclo actual
      */
     function getCurrentCycleSales() {
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
-      const permanentSales = getStorage('ventas_permanentes');
-      
-      if (!lastClose) {
-        // Si no hay cierre previo, todas las ventas están en C1
-        return permanentSales;
-      }
-      
-      const lastCloseDate = new Date(lastClose);
-      lastCloseDate.setHours(23, 59, 59, 999);
-      
-      // Solo ventas POSTERIORES al último cierre
-      return permanentSales.filter(sale => {
-        const saleDate = new Date(sale.date_iso);
-        return saleDate > lastCloseDate;
-      });
+      const currentCycle = getCurrentCycle();
+      return getSalesByCycle(currentCycle);
     }
 
     /**
-     * Obtiene las ventas del ciclo anterior (penúltimo ciclo cerrado)
+     * Obtiene las ventas del ciclo anterior
      */
     function getPreviousCycleSales() {
       const cycleHistory = getStorage('historial_ciclos') || [];
+      if (cycleHistory.length === 0) return [];
+      
+      const closureDates = getAllCycleClosureDates();
+      const currentCycleNumber = parseInt(getCurrentCycle().replace('C', ''));
+      
+      if (currentCycleNumber <= 1) return [];
+      
+      const previousCycleId = `C${currentCycleNumber - 1}`;
+      return getSalesByCycle(previousCycleId);
+    }
+
+    /**
+     * Recalcula los ciclos de TODAS las ventas basándose en el historial de cierres
+     */
+    function recalculateAllCycles() {
       const permanentSales = getStorage('ventas_permanentes');
       
-      // Necesitamos al menos 2 ciclos cerrados para tener un ciclo anterior
-      if (cycleHistory.length < 2) {
-        return [];
+      if (permanentSales.length === 0) {
+        showToast('No hay ventas para recalcular');
+        return;
       }
       
-      // Ordenar ciclos por fecha (más reciente primero)
-      const sortedHistory = cycleHistory.sort((a, b) => 
-        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
-      );
-      
-      // El ciclo anterior es el SEGUNDO más reciente
-      const previousCycle = sortedHistory[1];
-      const currentCycle = sortedHistory[0];
-      
-      if (!previousCycle || !currentCycle) {
-        return [];
-      }
-      
-      // Para el primer ciclo, no hay fecha de inicio previa
-      let startDate = new Date('2000-01-01');
-      
-      // Buscar si hay un ciclo anterior al que estamos analizando
-      if (sortedHistory.length >= 3) {
-        const cycleBeforePrevious = sortedHistory[2];
-        startDate = new Date(cycleBeforePrevious.fecha_cierre);
-        startDate.setHours(23, 59, 59, 999);
-      }
-      
-      const endDate = new Date(previousCycle.fecha_cierre);
-      endDate.setHours(23, 59, 59, 999);
-      
-      // Filtrar ventas entre el inicio y el fin del ciclo anterior
-      return permanentSales.filter(sale => {
-        const saleDate = new Date(sale.date_iso);
-        return saleDate > startDate && saleDate <= endDate;
+      // Recalcular ciclo para cada venta
+      permanentSales.forEach(sale => {
+        sale.cycle_id = getCycleFromDate(sale.date_iso);
       });
-    }
-
-    /**
-     * Obtiene el resumen del último ciclo cerrado desde el historial
-     */
-    function getLastClosedCycleSummary() {
-      const cycleHistory = getStorage('historial_ciclos') || [];
       
-      if (cycleHistory.length === 0) {
-        return null;
-      }
+      setStorage('ventas_permanentes', permanentSales);
       
-      // Ordenar por fecha de cierre (más reciente primero)
-      const sortedHistory = cycleHistory.sort((a, b) => 
-        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
+      // Actualizar ventas del ciclo actual
+      const currentCycle = getCurrentCycle();
+      const currentCycleSales = permanentSales.filter(s => 
+        s.cycle_id === currentCycle || getCycleFromDate(s.date_iso) === currentCycle
       );
       
-      // Devolver el último ciclo cerrado
-      return sortedHistory[0];
-    }
-
-    /**
-     * Obtiene el resumen del ciclo anterior al último cerrado
-     */
-    function getPreviousCycleSummary() {
-      const cycleHistory = getStorage('historial_ciclos') || [];
+      setStorage('ventas_ciclo', currentCycleSales);
       
-      if (cycleHistory.length < 2) {
-        return null;
-      }
+      // Actualizar ventas del día
+      const today = getCurrentDate();
+      const todaySales = permanentSales.filter(s => s.date_iso === today);
+      setStorage('ventas_dia', todaySales);
       
-      // Ordenar por fecha de cierre (más reciente primero)
-      const sortedHistory = cycleHistory.sort((a, b) => 
-        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
-      );
-      
-      // Devolver el penúltimo ciclo cerrado
-      return sortedHistory[1];
+      refreshUI();
+      showToast('✅ Ciclos recalculados correctamente');
     }
 
     // ============================================
@@ -1768,9 +1740,6 @@
       return parseFloat(cleaned);
     }
 
-    /**
-     * Formato de fecha/hora legible: "DD/MM/YYYY HH:MM"
-     */
     function formatDateTimeLegible(isoString) {
       if (!isoString) return '';
       const date = new Date(isoString);
@@ -1803,7 +1772,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE VENTAS Y COMISIONES - RENDERIZACIÓN MEJORADA
+    // FUNCIONES DE VENTAS Y COMISIONES
     // ============================================
 
     function addSale() {
@@ -1830,8 +1799,9 @@
         permanentSales.push(sale);
         setStorage('ventas_permanentes', permanentSales);
 
-        // Agregar a ciclo actual si corresponde
-        if (getCurrentCycle() === sale.cycle_id) {
+        // Agregar a ciclo actual
+        const currentCycle = getCurrentCycle();
+        if (sale.cycle_id === currentCycle) {
           const salesCycle = getStorage('ventas_ciclo');
           salesCycle.push(sale);
           setStorage('ventas_ciclo', salesCycle);
@@ -1897,12 +1867,9 @@
       showToast('✓ Última venta eliminada');
     }
 
-    /**
-     * REFRESH UI MEJORADO - MUESTRA TODAS LAS VENTAS
-     */
     function refreshUI() {
       const salesDay = getStorage('ventas_dia');
-      const currentCycleSales = getCurrentCycleSales(); // TODAS las ventas del ciclo
+      const currentCycleSales = getCurrentCycleSales();
       
       const dayWithVat = Math.round(salesDay.reduce((sum, s) => sum + s.amount_with_vat, 0));
       const dayWithoutVat = Math.round(salesDay.reduce((sum, s) => sum + s.net_without_vat, 0));
@@ -1919,32 +1886,26 @@
       document.getElementById('cycleWithoutVat').textContent = formatCLP(cycleWithoutVat);
       document.getElementById('cycleCommission').textContent = formatCLP(cycleCommission);
       
-      // RENDERIZACIÓN MEJORADA - TODAS LAS VENTAS, NO SOLO 20
-      renderSalesList('salesDay', salesDay.slice().reverse()); // Mostrar TODAS del día
-      renderSalesList('salesCycle', currentCycleSales.slice().reverse()); // Mostrar TODAS del ciclo
-      
-      // RENDERIZAR HISTORIAL COMPLETO
+      // RENDERIZACIÓN MEJORADA
+      renderSalesList('salesDay', salesDay.slice().reverse());
+      renderSalesList('salesCycle', currentCycleSales.slice().reverse());
       renderAllSalesHistory();
       
       updateCycleSummary();
     }
 
-    /**
-     * RENDERIZACIÓN MEJORADA - MUESTRA FECHA/HORA LEGIBLE
-     */
     function renderSalesList(elementId, sales) {
       const container = document.getElementById(elementId);
       container.innerHTML = '';
       
       if (sales.length === 0) {
-        return; // El :empty CSS se encarga del mensaje
+        return;
       }
       
       sales.forEach((s, i) => {
         const div = document.createElement('div');
         div.className = 'sale-item';
         
-        // Formato legible: "DD/MM/YYYY HH:MM"
         const dateTime = formatDateTimeLegible(s.timestamp);
         
         div.innerHTML = `
@@ -1971,20 +1932,15 @@
       });
     }
 
-    /**
-     * NUEVA FUNCIÓN: RENDERIZAR HISTORIAL COMPLETO DE VENTAS
-     * Muestra TODAS las ventas permanentes ordenadas descendente
-     */
     function renderAllSalesHistory() {
       const permanentSales = getStorage('ventas_permanentes');
       const container = document.getElementById('salesHistory');
       container.innerHTML = '';
       
       if (permanentSales.length === 0) {
-        return; // El :empty CSS se encarga del mensaje
+        return;
       }
       
-      // Ordenar por fecha descendente (más reciente primero)
       const sortedSales = [...permanentSales].sort((a, b) => 
         new Date(b.timestamp) - new Date(a.timestamp)
       );
@@ -1993,7 +1949,6 @@
         const div = document.createElement('div');
         div.className = 'sale-item';
         
-        // Formato legible: "DD/MM/YYYY HH:MM"
         const dateTime = formatDateTimeLegible(s.timestamp);
         
         div.innerHTML = `
@@ -2021,7 +1976,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE CIERRE DE CICLO (CORREGIDAS)
+    // FUNCIONES DE CIERRE DE CICLO MEJORADAS
     // ============================================
 
     function showCloseCycleModal() {
@@ -2056,62 +2011,163 @@
         return;
       }
       
-      // Guardar fecha de cierre anterior para referencia
-      const previousClose = localStorage.getItem('ultimo_cierre_ciclo') || '2000-01-01';
+      // Validar que la fecha no sea anterior a cierres existentes
+      const closureDates = getAllCycleClosureDates();
+      if (closureDates.length > 0) {
+        const lastClosure = new Date(closureDates[closureDates.length - 1]);
+        const newClosure = new Date(cycleDate);
+        if (newClosure <= lastClosure) {
+          alert('La fecha de cierre debe ser posterior al último cierre registrado');
+          return;
+        }
+      }
       
-      // Guardar nueva fecha de cierre
-      localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
-      
-      // Obtener ventas del ciclo que se está cerrando
-      const permanentSales = getStorage('ventas_permanentes');
-      const lastCloseDate = new Date(previousClose);
-      lastCloseDate.setHours(23, 59, 59, 999);
-      
-      const cycleCloseDate = new Date(cycleDate);
-      cycleCloseDate.setHours(23, 59, 59, 999);
-      
-      const cycleSales = permanentSales.filter(sale => {
-        const saleDate = new Date(sale.date_iso);
-        return saleDate > lastCloseDate && saleDate <= cycleCloseDate;
-      });
-      
-      // Guardar historial del ciclo
+      // Guardar en historial de cierres
       const cycleHistory = getStorage('historial_ciclos') || [];
+      const currentCycle = getCurrentCycle();
+      const cycleSales = getCurrentCycleSales();
+      
       const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
       const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
       const totalCommission = Math.round(cycleSales.reduce((sum, s) => sum + s.commission, 0));
       
       cycleHistory.push({
         fecha_cierre: cycleDate,
-        ciclo: `C${cycleHistory.length + 1}`,
+        ciclo: currentCycle,
         ventas_count: cycleSales.length,
         total_with_vat: totalWithVat,
         total_without_vat: totalWithoutVat,
-        comision_total: totalCommission,
-        fecha_inicio: previousClose
+        comision_total: totalCommission
       });
       
       setStorage('historial_ciclos', cycleHistory);
       
-      // Limpiar ventas del ciclo actual (se recrearán con getCurrentCycleSales)
-      setStorage('ventas_ciclo', []);
+      // Recalcular ciclos para todas las ventas
+      recalculateAllCycles();
       
       // Vaciar ventas del día
       setStorage('ventas_dia', []);
       
       hideModal('closeCycleModal');
       refreshUI();
-      showToast(`✓ Ciclo cerrado correctamente - ${cycleSales.length} ventas`);
-    }
-
-    function closeDay() {
-      setStorage('ventas_dia', []);
-      refreshUI();
-      showToast('✓ Día cerrado. Ventas del día vaciadas.');
+      showToast('✅ Ciclo cerrado correctamente. Ciclos recalculados.');
     }
 
     // ============================================
-    // FUNCIONES DE IMPORTACIÓN CSV SIN DETECCIÓN DE DUPLICADOS
+    // NUEVAS FUNCIONES PARA GESTIONAR HISTORIAL DE CIERRES
+    // ============================================
+
+    function showManageCycleHistoryModal() {
+      showModal('manageCycleHistoryModal');
+      loadCycleHistoryList();
+    }
+
+    function loadCycleHistoryList() {
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      const container = document.getElementById('cycleHistoryList');
+      
+      if (cycleHistory.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--muted); font-style: italic;">No hay cierres registrados</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      
+      cycleHistory.sort((a, b) => new Date(b.fecha_cierre) - new Date(a.fecha_cierre)).forEach((ciclo, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = `
+          padding: 12px;
+          margin-bottom: 8px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        `;
+        
+        div.innerHTML = `
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: var(--accent);">Ciclo ${ciclo.ciclo}</div>
+            <div style="font-size: 12px; color: var(--muted);">Fecha: ${ciclo.fecha_cierre}</div>
+            <div style="font-size: 11px; color: #666;">Ventas: ${ciclo.ventas_count} | Comisión: ${formatCLP(ciclo.comision_total)}</div>
+          </div>
+          <button onclick="deleteCycleClose(${index})" style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+            Eliminar
+          </button>
+        `;
+        
+        container.appendChild(div);
+      });
+    }
+
+    function addManualCycleClose() {
+      const dateInput = document.getElementById('newCycleCloseDate');
+      const date = dateInput.value;
+      
+      if (!date) {
+        alert('Por favor selecciona una fecha');
+        return;
+      }
+      
+      // Validar que no exista ya esta fecha de cierre
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      const exists = cycleHistory.some(c => c.fecha_cierre === date);
+      
+      if (exists) {
+        alert('Ya existe un cierre en esta fecha');
+        return;
+      }
+      
+      // Validar orden cronológico
+      if (cycleHistory.length > 0) {
+        const lastClosure = new Date(cycleHistory[cycleHistory.length - 1].fecha_cierre);
+        const newClosure = new Date(date);
+        if (newClosure <= lastClosure) {
+          alert('La fecha debe ser posterior al último cierre registrado');
+          return;
+        }
+      }
+      
+      // Agregar cierre sin datos de ventas (solo fecha)
+      cycleHistory.push({
+        fecha_cierre: date,
+        ciclo: `C${cycleHistory.length + 1}`,
+        ventas_count: 0,
+        total_with_vat: 0,
+        total_without_vat: 0,
+        comision_total: 0
+      });
+      
+      setStorage('historial_ciclos', cycleHistory);
+      
+      // Recalcular ciclos
+      recalculateAllCycles();
+      
+      dateInput.value = '';
+      loadCycleHistoryList();
+      showToast('✅ Cierre agregado. Ciclos recalculados.');
+    }
+
+    function deleteCycleClose(index) {
+      if (!confirm('¿Eliminar este cierre de ciclo? Esto afectará la asignación de ciclos a las ventas.')) {
+        return;
+      }
+      
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      cycleHistory.splice(index, 1);
+      
+      setStorage('historial_ciclos', cycleHistory);
+      
+      // Recalcular ciclos
+      recalculateAllCycles();
+      
+      loadCycleHistoryList();
+      showToast('✅ Cierre eliminado. Ciclos recalculados.');
+    }
+
+    // ============================================
+    // FUNCIONES DE IMPORTACIÓN CSV MEJORADAS (100% DE VENTAS)
     // ============================================
 
     function showUploadModal() {
@@ -2179,48 +2235,64 @@
         const line = lines[i].trim();
         if (!line) continue;
 
-        const cells = [];
-        let inQuotes = false;
-        let currentCell = '';
+        const cells = line.split(',').map(cell => cell.replace(/"/g, '').trim());
         
-        for (let j = 0; j < line.length; j++) {
-          const char = line[j];
+        if (cells.length >= 6) {
+          const [fechaHoraStr, montoConIVARaw, netoSinIVARaw, comisionRaw, fechaStr, mesStr, cicloStr] = cells;
           
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cells.push(currentCell);
-            currentCell = '';
-          } else {
-            currentCell += char;
+          // Intentar múltiples formatos de fecha
+          let timestamp, dateIso;
+          
+          try {
+            // Formato 1: "DD/MM/YYYY HH:MM"
+            if (fechaHoraStr.includes('/') && fechaHoraStr.includes(' ')) {
+              const [datePart, timePart] = fechaHoraStr.split(' ');
+              const [day, month, year] = datePart.split('/');
+              const [hours, minutes] = timePart.split(':');
+              timestamp = new Date(`20${year}-${month}-${day}T${hours}:${minutes}:00`).toISOString();
+            } 
+            // Formato 2: ISO string
+            else if (fechaHoraStr.includes('T')) {
+              timestamp = new Date(fechaHoraStr).toISOString();
+            } 
+            // Formato 3: Solo fecha
+            else {
+              timestamp = new Date(fechaHoraStr + 'T12:00:00').toISOString();
+            }
+            
+            // Parsear fecha ISO
+            if (fechaStr.includes('/')) {
+              const [day, month, year] = fechaStr.split('/');
+              dateIso = `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            } else {
+              dateIso = fechaStr;
+            }
+          } catch (e) {
+            console.warn('Error parsing date:', fechaHoraStr, e);
+            timestamp = new Date().toISOString();
+            dateIso = new Date().toISOString().split('T')[0];
           }
-        }
-        cells.push(currentCell);
-        
-        const cleanCells = cells.map(cell => cell.replace(/"/g, '').trim());
-        
-        if (cleanCells.length >= 6) {
-          const [fechaHoraStr, montoConIVARaw, netoSinIVARaw, comisionRaw, fechaStr, mesStr] = cleanCells;
-          
-          const timestamp = parseDateString(fechaHoraStr);
-          const dateIso = parseDateOnly(fechaStr);
-          const monthId = mesStr;
           
           const montoConIVA = Math.round(parseNumber(montoConIVARaw));
           const netoSinIVA = Math.round(parseNumber(netoSinIVARaw));
           const comision = Math.round(parseNumber(comisionRaw));
           
-          if (timestamp && !isNaN(montoConIVA) && !isNaN(netoSinIVA) && !isNaN(comision) && dateIso && monthId) {
+          const monthId = mesStr || (dateIso ? dateIso.substring(0, 7) : '');
+          const cycleId = cicloStr || (dateIso ? getCycleFromDate(dateIso) : 'C1');
+          
+          if (!isNaN(montoConIVA) && !isNaN(netoSinIVA) && !isNaN(comision) && dateIso) {
             data.push({
               fecha_hora: fechaHoraStr,
               amount_with_vat: montoConIVA,
               net_without_vat: netoSinIVA,
               commission: comision,
               fecha: fechaStr,
-              mes: mesStr,
-              timestamp: timestamp.toISOString(),
+              mes: monthId,
+              ciclo: cycleId,
+              timestamp: timestamp,
               date_iso: dateIso,
-              month_id: monthId
+              month_id: monthId,
+              cycle_id: cycleId
             });
           }
         }
@@ -2229,40 +2301,9 @@
       return data;
     }
 
-    function parseDateString(dateStr) {
-      const parts = dateStr.split(' ');
-      if (parts.length !== 2) return new Date();
-      
-      const datePart = parts[0];
-      const timePart = parts[1];
-      
-      const dateParts = datePart.split('/');
-      if (dateParts.length !== 3) return new Date();
-      
-      const day = parseInt(dateParts[0]);
-      const month = parseInt(dateParts[1]) - 1;
-      const year = 2000 + parseInt(dateParts[2]);
-      
-      const timeParts = timePart.split(':');
-      const hours = timeParts.length >= 1 ? parseInt(timeParts[0]) : 0;
-      const minutes = timeParts.length >= 2 ? parseInt(timeParts[1]) : 0;
-      
-      return new Date(year, month, day, hours, minutes);
-    }
-
-    function parseDateOnly(dateStr) {
-      const parts = dateStr.split('/');
-      if (parts.length !== 3) return '';
-      
-      const day = parts[0].padStart(2, '0');
-      const month = parts[1].padStart(2, '0');
-      const year = '20' + parts[2];
-      
-      return `${year}-${month}-${day}`;
-    }
-
     function parseNumber(numStr) {
-      const clean = numStr.replace(/\./g, '').replace(',', '.');
+      if (!numStr) return 0;
+      const clean = numStr.toString().replace(/\./g, '').replace(',', '.');
       return parseFloat(clean) || 0;
     }
 
@@ -2283,6 +2324,7 @@
           <td>${formatCLP(row.commission)}</td>
           <td>${row.fecha || ''}</td>
           <td>${row.mes || ''}</td>
+          <td>${row.ciclo || row.cycle_id || ''}</td>
         `;
         
         previewBody.appendChild(tr);
@@ -2309,15 +2351,14 @@
 
       const permanentSales = getStorage('ventas_permanentes');
       const today = getCurrentDate();
-      const currentCycle = getCurrentCycle();
       
-      let addedToPermanent = 0;
-      let addedToCycle = 0;
-      let addedToDay = 0;
+      let importedCount = 0;
+      let skippedDuplicates = 0;
 
+      // IMPORTAR 100% DE LAS VENTAS SIN VERIFICAR DUPLICADOS
       csvData.forEach(row => {
-        // SIN DETECCIÓN DE DUPLICADOS - TODAS LAS VENTAS SE IMPORTAN
-        const cycleId = getCycleFromDate(row.date_iso);
+        // Usar ciclo del archivo o calcularlo
+        const cycleId = row.ciclo || getCycleFromDate(row.date_iso);
         
         const sale = {
           amount_with_vat: row.amount_with_vat,
@@ -2329,136 +2370,205 @@
           cycle_id: cycleId
         };
 
+        // Agregar a ventas permanentes (SIN VERIFICAR DUPLICADOS)
         permanentSales.push(sale);
-        addedToPermanent++;
-
-        // Agregar al ciclo actual si corresponde
-        if (cycleId === currentCycle) {
-          const salesCycle = getStorage('ventas_ciclo');
-          salesCycle.push(sale);
-          setStorage('ventas_ciclo', salesCycle);
-          addedToCycle++;
-        }
-
-        // Agregar a ventas del día si corresponde
-        if (row.date_iso === today) {
-          const salesDay = getStorage('ventas_dia');
-          salesDay.push(sale);
-          setStorage('ventas_dia', salesDay);
-          addedToDay++;
-        }
+        importedCount++;
       });
 
       setStorage('ventas_permanentes', permanentSales);
+      
+      // Recalcular ciclos después de importar
+      recalculateAllCycles();
+      
+      // Actualizar ventas del día actual si corresponde
+      const todaySales = permanentSales.filter(s => s.date_iso === today);
+      setStorage('ventas_dia', todaySales);
 
-      let message = `✅ Archivo procesado correctamente (sin verificación de duplicados):\n\n`;
-      message += `• Registros importados: ${csvData.length}\n`;
-      
-      if (addedToCycle > 0) {
-        message += `• Agregados al ciclo actual: ${addedToCycle}\n`;
-      }
-      
-      if (addedToDay > 0) {
-        message += `• Agregados al día actual: ${addedToDay}\n`;
-      }
+      let message = `✅ Archivo procesado correctamente:\n\n`;
+      message += `• Registros importados: ${importedCount}\n`;
+      message += `• Ventas del día actual: ${todaySales.length}\n`;
+      message += `• Total en historial: ${permanentSales.length}`;
 
       alert(message);
       hideModal('uploadModal');
       refreshUI();
-      showToast(`✅ ${csvData.length} ventas importadas (sin verificar duplicados)`);
+      showToast(`✅ ${importedCount} ventas importadas al 100%`);
     }
 
     // ============================================
-    // FUNCIONES DE DESINSTALACIÓN COMPLETA
+    // FUNCIONES DE EXPORTACIÓN MEJORADAS (100% DE VENTAS)
     // ============================================
 
-    function showUninstallModal() {
-      showModal('uninstallModal');
-      document.getElementById('uninstallConfirm').value = '';
-      document.getElementById('confirmUninstallBtn').disabled = true;
+    function showExportModal() {
+      showModal('exportModal');
+      updateExportOptions();
     }
 
-    function checkUninstallConfirmation() {
-      const input = document.getElementById('uninstallConfirm');
-      const confirmBtn = document.getElementById('confirmUninstallBtn');
-      confirmBtn.disabled = input.value.toUpperCase() !== 'DESINSTALAR';
-    }
-
-    function performCompleteUninstall() {
-      // 1. Eliminar TODOS los datos de localStorage
-      const keysToRemove = [
-        'ventas_dia', 'ventas_ciclo', 'ventas_permanentes', 
-        'prospectos', 'ultimo_cierre_ciclo', 'nombre_vendedor',
-        'historial_ciclos'
-      ];
+    function updateExportOptions() {
+      const exportType = document.getElementById('exportType').value;
+      const dateSelector = document.getElementById('dateSelector');
+      const dateSelect = document.getElementById('dateSelect');
       
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-      });
+      dateSelect.innerHTML = '';
       
-      // 2. Eliminar todos los datos de IndexedDB si existe
-      if (window.indexedDB) {
-        indexedDB.databases().then(databases => {
-          databases.forEach(db => {
-            indexedDB.deleteDatabase(db.name);
-          });
-        }).catch(console.log);
-      }
-      
-      // 3. Eliminar cache de Service Worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(registration => {
-            registration.unregister();
-          });
+      if (exportType === 'day') {
+        dateSelector.style.display = 'block';
+        const salesDay = getStorage('ventas_dia');
+        const today = getCurrentDate();
+        
+        if (salesDay.length > 0) {
+          const option = document.createElement('option');
+          option.value = today;
+          option.textContent = `${today} (Día actual - ${salesDay.length} ventas)`;
+          dateSelect.appendChild(option);
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas hoy';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'cycle') {
+        dateSelector.style.display = 'block';
+        const cycleSales = getCurrentCycleSales();
+        const currentCycle = getCurrentCycle();
+        
+        if (cycleSales.length > 0) {
+          const option = document.createElement('option');
+          option.value = currentCycle;
+          option.textContent = `${currentCycle} (Ciclo actual - ${cycleSales.length} ventas)`; 
+          dateSelect.appendChild(option);
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas en el ciclo actual';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'permanent') {
+        dateSelector.style.display = 'block';
+        const permanentSales = getStorage('ventas_permanentes');
+        
+        const uniqueMonths = [...new Set(permanentSales.map(s => s.month_id).filter(Boolean))].sort().reverse();
+        
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = `Todos los meses (${permanentSales.length} ventas)`;
+        dateSelect.appendChild(allOption);
+        
+        uniqueMonths.forEach(month => {
+          const monthSales = permanentSales.filter(s => s.month_id === month);
+          const option = document.createElement('option');
+          option.value = month;
+          option.textContent = `${month} (${monthSales.length} ventas)`;
+          dateSelect.appendChild(option);
         });
         
-        // Eliminar cache
-        if ('caches' in window) {
-          caches.keys().then(cacheNames => {
-            cacheNames.forEach(cacheName => {
-              caches.delete(cacheName);
-            });
+        if (dateSelect.options.length === 1) {
+          const option = document.createElement('option');
+          option.textContent = 'No hay ventas en historial permanente';
+          dateSelect.appendChild(option);
+        }
+      } else if (exportType === 'cycleHistory') {
+        dateSelector.style.display = 'block';
+        const cycleHistory = getStorage('historial_ciclos') || [];
+        
+        if (cycleHistory.length > 0) {
+          const allOption = document.createElement('option');
+          allOption.value = 'all';
+          allOption.textContent = `Todos los cierres (${cycleHistory.length})`;
+          dateSelect.appendChild(allOption);
+          
+          cycleHistory.forEach((ciclo, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `Ciclo ${ciclo.ciclo} - ${ciclo.fecha_cierre} - ${formatCLP(ciclo.comision_total)}`;
+            dateSelect.appendChild(option);
           });
+        } else {
+          const option = document.createElement('option');
+          option.textContent = 'No hay historial de cierres';
+          dateSelect.appendChild(option);
+        }
+      } else {
+        dateSelector.style.display = 'none';
+      }
+    }
+
+    function confirmExport() {
+      const exportType = document.getElementById('exportType').value;
+      const dateSelect = document.getElementById('dateSelect');
+      const selectedDate = dateSelect.value;
+      
+      let data = [];
+      let filename = '';
+      
+      if (exportType === 'day') {
+        const salesDay = getStorage('ventas_dia');
+        const today = getCurrentDate();
+        
+        if (selectedDate === today) {
+          data = salesDay;
+          filename = `ventas_dia_${today}_completo.csv`;
+        }
+      } else if (exportType === 'cycle') {
+        const currentCycle = getCurrentCycle();
+        const cycleSales = getCurrentCycleSales();
+        
+        if (selectedDate === currentCycle) {
+          data = cycleSales;
+          filename = `ventas_ciclo_${currentCycle}_completo.csv`;
+        }
+      } else if (exportType === 'permanent') {
+        const permanentSales = getStorage('ventas_permanentes');
+        
+        if (selectedDate === 'all') {
+          data = permanentSales;
+          filename = `historial_permanente_completo_${new Date().toISOString().split('T')[0]}.csv`;
+        } else {
+          data = permanentSales.filter(s => s.month_id === selectedDate);
+          filename = `historial_mes_${selectedDate}_completo.csv`;
+        }
+      } else if (exportType === 'cycleHistory') {
+        const cycleHistory = getStorage('historial_ciclos') || [];
+        if (selectedDate === 'all') {
+          data = cycleHistory;
+          filename = `historial_cierres_completo.csv`;
+        } else if (selectedDate >= 0 && selectedDate < cycleHistory.length) {
+          data = [cycleHistory[selectedDate]];
+          filename = `cierre_ciclo_${cycleHistory[selectedDate].ciclo}_${cycleHistory[selectedDate].fecha_cierre}.csv`;
         }
       }
       
-      // 4. Mostrar mensaje final
-      hideModal('uninstallModal');
+      if (data.length === 0) {
+        alert('No hay datos para exportar en la selección elegida');
+        return;
+      }
       
-      setTimeout(() => {
-        alert('✅ APP DESINSTALADA COMPLETAMENTE\n\n' +
-              'Todos los datos han sido eliminados.\n' +
-              'La aplicación ya no funcionará en este dispositivo.\n' +
-              'Para volver a usar el sistema, deberás reinstalarla manualmente.');
-        
-        // 5. Intentar eliminar la app instalada (si es PWA)
-        if (window.matchMedia('(display-mode: standalone)').matches || 
-            window.navigator.standalone === true) {
-          // En algunos dispositivos se puede sugerir desinstalación
-          if (navigator.app && navigator.app.uninstallApp) {
-            navigator.app.uninstallApp();
-          } else {
-            // Mostrar instrucciones para desinstalar manualmente
-            alert('Para completar la desinstalación:\n' +
-                  '1. Ve a la configuración de tu dispositivo\n' +
-                  '2. Busca "Aplicaciones" o "Apps"\n' +
-                  '3. Encuentra "Sistema de Comisiones"\n' +
-                  '4. Selecciona "Desinstalar"\n\n' +
-                  'Los datos ya han sido eliminados.');
-          }
-        }
-        
-        // 6. Recargar página para limpiar estado
-        setTimeout(() => {
-          window.location.href = 'about:blank';
-          window.close();
-        }, 2000);
-      }, 500);
+      let csv = '';
+      if (exportType === 'cycleHistory') {
+        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total\n';
+        data.forEach(c => {
+          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total}\n`;
+        });
+      } else {
+        // EXPORTAR 100% DE LAS VENTAS CON TODOS LOS CAMPOS
+        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo,Timestamp\n';
+        data.forEach(s => {
+          const timestamp = formatDateTimeForExcel(s.timestamp);
+          const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
+          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}","${s.timestamp}"\n`;
+        });
+      }
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      
+      hideModal('exportModal');
+      showToast(`✓ Exportado: ${filename} (${data.length} registros)`);
     }
 
     // ============================================
-    // FUNCIONES DE KPI Y ANÁLISIS (CORREGIDAS)
+    // FUNCIONES DE KPI Y ANÁLISIS
     // ============================================
 
     function calculateAndDisplayKPIs() {
@@ -2467,6 +2577,7 @@
       
       const daySales = permanentSales.filter(s => s.date_iso === today);
       const currentCycleSales = getCurrentCycleSales();
+      const previousCycleSales = getPreviousCycleSales();
       
       // Ventas del día
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
@@ -2480,19 +2591,11 @@
       const currentCycleAverage = currentCycleCount > 0 ? Math.round(currentCycleTotal / currentCycleCount) : 0;
       const currentCycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
       
-      // CICLO ANTERIOR CERRADO - USAR HISTORIAL
-      const previousCycleSummary = getPreviousCycleSummary();
-      let previousCycleTotal = 0;
-      let previousCycleCount = 0;
-      let previousCycleAverage = 0;
-      let previousCycleCommission = 0;
-      
-      if (previousCycleSummary) {
-        previousCycleTotal = previousCycleSummary.total_without_vat || 0;
-        previousCycleCount = previousCycleSummary.ventas_count || 0;
-        previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
-        previousCycleCommission = previousCycleSummary.comision_total || 0;
-      }
+      // CICLO ANTERIOR CERRADO
+      const previousCycleTotal = Math.round(previousCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
+      const previousCycleCount = previousCycleSales.length;
+      const previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
+      const previousCycleCommission = Math.round(previousCycleSales.reduce((sum, s) => sum + s.commission, 0));
       
       // Actualizar KPI del día
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
@@ -2517,7 +2620,6 @@
       const countDifference = currentCycleCount - previousCycleCount;
       const commissionDifference = currentCycleCommission - previousCycleCommission;
 
-      // Aplicar formato con signo
       function formatWithSign(value) {
         const sign = value >= 0 ? '+' : '';
         return sign + formatCLP(value);
@@ -2527,21 +2629,95 @@
       document.getElementById('comparisonCount').textContent = countDifference >= 0 ? '+' + countDifference : countDifference;
       document.getElementById('comparisonCommission').textContent = formatWithSign(commissionDifference);
 
-      // Aplicar colores según la diferencia
       const comparisonElements = ['comparisonTotal', 'comparisonCount', 'comparisonCommission'];
       comparisonElements.forEach(id => {
         const element = document.getElementById(id);
         const text = element.textContent;
         if (text.startsWith('+')) {
-          element.style.color = '#10b981'; // Verde para positivo
+          element.style.color = '#10b981';
         } else if (text.startsWith('-')) {
-          element.style.color = '#dc2626'; // Rojo para negativo
+          element.style.color = '#dc2626';
         }
       });
     }
 
     // ============================================
-    // FUNCIONES CRM
+    // FUNCIONES DE DESINSTALACIÓN
+    // ============================================
+
+    function showUninstallModal() {
+      showModal('uninstallModal');
+      document.getElementById('uninstallConfirm').value = '';
+      document.getElementById('confirmUninstallBtn').disabled = true;
+    }
+
+    function checkUninstallConfirmation() {
+      const input = document.getElementById('uninstallConfirm');
+      const confirmBtn = document.getElementById('confirmUninstallBtn');
+      confirmBtn.disabled = input.value.toUpperCase() !== 'DESINSTALAR';
+    }
+
+    function performCompleteUninstall() {
+      const keysToRemove = [
+        'ventas_dia', 'ventas_ciclo', 'ventas_permanentes', 
+        'prospectos', 'historial_ciclos', 'nombre_vendedor'
+      ];
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      if (window.indexedDB) {
+        indexedDB.databases().then(databases => {
+          databases.forEach(db => {
+            indexedDB.deleteDatabase(db.name);
+          });
+        }).catch(console.log);
+      }
+      
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister();
+          });
+        });
+        
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+              caches.delete(cacheName);
+            });
+          });
+        }
+      }
+      
+      hideModal('uninstallModal');
+      
+      setTimeout(() => {
+        alert('✅ APP DESINSTALADA COMPLETAMENTE\n\n' +
+              'Todos los datos han sido eliminados.\n' +
+              'La aplicación ya no funcionará en este dispositivo.\n' +
+              'Para volver a usar el sistema, deberás reinstalarla manualmente.');
+        
+        if (window.matchMedia('(display-mode: standalone)').matches || 
+            window.navigator.standalone === true) {
+          alert('Para completar la desinstalación:\n' +
+                '1. Ve a la configuración de tu dispositivo\n' +
+                '2. Busca "Aplicaciones" o "Apps"\n' +
+                '3. Encuentra "Sistema de Comisiones"\n' +
+                '4. Selecciona "Desinstalar"\n\n' +
+                'Los datos ya han sido eliminados.');
+        }
+        
+        setTimeout(() => {
+          window.location.href = 'about:blank';
+          window.close();
+        }, 2000);
+      }, 500);
+    }
+
+    // ============================================
+    // FUNCIONES CRM (MANTENIDAS)
     // ============================================
 
     function getProspectsStorage() {
@@ -3015,11 +3191,6 @@
       showModal('resetModal');
     }
 
-    function showExportModal() {
-      showModal('exportModal');
-      updateExportOptions();
-    }
-
     function showModifyModal() {
       showModal('modifyModal');
       document.getElementById('saleDate').value = getCurrentDate();
@@ -3029,8 +3200,10 @@
     }
 
     function confirmCloseDay() {
-      closeDay();
+      setStorage('ventas_dia', []);
       hideModal('closeDayModal');
+      refreshUI();
+      showToast('✓ Día cerrado. Ventas del día vaciadas.');
     }
 
     function confirmReset() {
@@ -3041,170 +3214,242 @@
       setStorage('ventas_ciclo', []);
       setStorage('ventas_permanentes', []);
       setStorage('prospectos', []);
-      localStorage.removeItem('ultimo_cierre_ciclo');
-      localStorage.removeItem('nombre_vendedor');
       setStorage('historial_ciclos', []);
+      localStorage.removeItem('nombre_vendedor');
       refreshUI();
       showToast('Sistema reseteado');
     }
 
     // ============================================
-    // FUNCIONES DE EXPORTACIÓN
+    // FUNCIONES DE IMPORTACIÓN CLIENTES
     // ============================================
 
-    function updateExportOptions() {
-      const exportType = document.getElementById('exportType').value;
-      const dateSelector = document.getElementById('dateSelector');
-      const dateSelect = document.getElementById('dateSelect');
-      
-      dateSelect.innerHTML = '';
-      
-      if (exportType === 'day') {
-        dateSelector.style.display = 'block';
-        const salesDay = getStorage('ventas_dia');
-        const today = getCurrentDate();
-        
-        if (salesDay.length > 0) {
-          const option = document.createElement('option');
-          option.value = today;
-          option.textContent = `${today} (Día actual - ${salesDay.length} ventas)`;
-          dateSelect.appendChild(option);
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas hoy';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'cycle') {
-        dateSelector.style.display = 'block';
-        const cycleSales = getCurrentCycleSales();
-        const currentCycle = getCurrentCycle();
-        
-        if (cycleSales.length > 0) {
-          const option = document.createElement('option');
-          option.value = currentCycle;
-          option.textContent = `${currentCycle} (Ciclo actual - ${cycleSales.length} ventas)`; 
-          dateSelect.appendChild(option);
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas en el ciclo actual';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'permanent') {
-        dateSelector.style.display = 'block';
-        const permanentSales = getStorage('ventas_permanentes');
-        
-        const uniqueMonths = [...new Set(permanentSales.map(s => s.month_id).filter(Boolean))].sort().reverse();
-        
-        const allOption = document.createElement('option');
-        allOption.value = 'all';
-        allOption.textContent = 'Todos los meses';
-        dateSelect.appendChild(allOption);
-        
-        uniqueMonths.forEach(month => {
-          const monthSales = permanentSales.filter(s => s.month_id === month);
-          const option = document.createElement('option');
-          option.value = month;
-          option.textContent = `${month} (${monthSales.length} ventas)`;
-          dateSelect.appendChild(option);
-        });
-        
-        if (dateSelect.options.length === 1) {
-          const option = document.createElement('option');
-          option.textContent = 'No hay ventas en historial permanente';
-          dateSelect.appendChild(option);
-        }
-      } else if (exportType === 'cycleHistory') {
-        dateSelector.style.display = 'block';
-        const cycleHistory = getStorage('historial_ciclos') || [];
-        
-        if (cycleHistory.length > 0) {
-          cycleHistory.forEach((ciclo, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `Ciclo ${ciclo.ciclo} - ${ciclo.fecha_cierre} - ${formatCLP(ciclo.comision_total)}`;
-            dateSelect.appendChild(option);
-          });
-        } else {
-          const option = document.createElement('option');
-          option.textContent = 'No hay historial de cierres';
-          dateSelect.appendChild(option);
-        }
-      } else {
-        dateSelector.style.display = 'none';
-      }
+    function showImportClientModal() {
+      showModal('importClientModal');
+      resetClientImportForm();
     }
 
-    function confirmExport() {
-      const exportType = document.getElementById('exportType').value;
-      const dateSelect = document.getElementById('dateSelect');
-      const selectedDate = dateSelect.value;
-      
-      let data = [];
-      let filename = '';
-      
-      if (exportType === 'day') {
-        const salesDay = getStorage('ventas_dia');
-        const today = getCurrentDate();
-        
-        if (selectedDate === today) {
-          data = salesDay;
-          filename = `ventas_dia_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'cycle') {
-        const currentCycle = getCurrentCycle();
-        const cycleSales = getCurrentCycleSales();
-        
-        if (selectedDate === currentCycle) {
-          data = cycleSales;
-          filename = `ventas_ciclo_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'permanent') {
-        const permanentSales = getStorage('ventas_permanentes');
-        
-        if (selectedDate === 'all') {
-          data = permanentSales;
-          filename = 'historial_permanente_completo.csv';
-        } else {
-          data = permanentSales.filter(s => s.month_id === selectedDate);
-          filename = `historial_permanente_${selectedDate}.csv`;
-        }
-      } else if (exportType === 'cycleHistory') {
-        const cycleHistory = getStorage('historial_ciclos') || [];
-        if (selectedDate >= 0 && selectedDate < cycleHistory.length) {
-          const ciclo = cycleHistory[selectedDate];
-          data = [ciclo];
-          filename = `cierre_ciclo_${ciclo.ciclo}_${ciclo.fecha_cierre}.csv`;
-        }
-      }
-      
-      if (data.length === 0) {
-        alert('No hay datos para exportar en la selección elegida');
+    function resetClientImportForm() {
+      document.getElementById('clientFile').value = '';
+      document.getElementById('clientFileName').textContent = 'No se ha seleccionado ningún archivo';
+      document.getElementById('clientFilePreview').style.display = 'none';
+      document.getElementById('clientUploadStats').style.display = 'none';
+      document.getElementById('processClientBtn').disabled = true;
+      clientFileData = [];
+      clientFileHeaders = [];
+    }
+
+    function handleClientFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        resetClientImportForm();
         return;
       }
       
-      let csv = '';
-      if (exportType === 'cycleHistory') {
-        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total,Fecha Inicio\n';
-        data.forEach(c => {
-          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total},${c.fecha_inicio || 'N/A'}\n`;
-        });
+      clientFileData = [];
+      document.getElementById('clientFileName').textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+      
+      const reader = new FileReader();
+      
+      if (file.name.endsWith('.csv')) {
+        reader.onload = function(e) {
+          try {
+            parseCSVData(e.target.result);
+          } catch (error) {
+            alert('Error al leer el archivo CSV: ' + error.message);
+            resetClientImportForm();
+          }
+        };
+        reader.readAsText(file, 'UTF-8');
       } else {
-        csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo\n';
-        data.forEach(s => {
-          const timestamp = formatDateTimeForExcel(s.timestamp);
-          const dateFormatted = formatDateForExcel(s.date_iso || s.timestamp);
-          csv += `"${timestamp}",${s.amount_with_vat},${s.net_without_vat},${s.commission},"${dateFormatted}","${s.month_id}","${s.cycle_id || getCurrentCycle()}"\n`;
-        });
+        alert('Formato de archivo no soportado. Use CSV.');
+        resetClientImportForm();
+        return;
       }
+    }
+
+    function parseCSVData(content) {
+      const lines = content.split('\n').filter(line => line.trim() !== '');
+      
+      if (lines.length === 0) {
+        alert('El archivo CSV está vacío.');
+        resetClientImportForm();
+        return;
+      }
+      
+      const headers = lines[0].split(',').map(h => h.trim());
+      clientFileHeaders = headers;
+      
+      const requiredHeaders = ['NombreApellido', 'Telefono', 'Producto', 'Estado'];
+      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+      
+      if (missingHeaders.length > 0) {
+        alert(`Faltan los siguientes encabezados obligatorios: ${missingHeaders.join(', ')}`);
+        resetClientImportForm();
+        return;
+      }
+      
+      const data = [];
+      let validRows = 0;
+      let ignoredRows = 0;
+      
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const cells = line.split(',').map(c => c.trim());
+        const row = {};
+        
+        headers.forEach((header, index) => {
+          row[header] = cells[index] || '';
+        });
+        
+        if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
+          ignoredRows++;
+          continue;
+        }
+        
+        const validStatuses = ['Falta contactar', 'Contactado por WhatsApp', 'Contactado por llamada', 'Contactado por WhatsApp y Llamada'];
+        if (!validStatuses.includes(row.Estado)) {
+          ignoredRows++;
+          continue;
+        }
+        
+        data.push(row);
+        validRows++;
+      }
+      
+      clientFileData = data;
+      
+      showClientPreview(data.slice(0, 10));
+      
+      const existingProspects = getProspectsStorage();
+      const duplicateRows = data.filter(row => 
+        existingProspects.some(p => p.telefono === row.Telefono)
+      ).length;
+      
+      showClientUploadStats(data.length, validRows, duplicateRows, ignoredRows);
+      document.getElementById('processClientBtn').disabled = false;
+    }
+
+    function showClientPreview(data) {
+      const previewBody = document.getElementById('clientPreviewBody');
+      previewBody.innerHTML = '';
+      
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.NombreApellido || ''}</td>
+          <td>${row.Telefono || ''}</td>
+          <td>${row.Producto || ''}</td>
+          <td>${row.Estado || ''}</td>
+          <td>${row.ObservacionInicial || ''}</td>
+          <td>${row.ProximoContacto || ''}</td>
+          <td>${row.Etiqueta || ''}</td>
+        `;
+        previewBody.appendChild(tr);
+      });
+      
+      document.getElementById('clientFilePreview').style.display = 'block';
+    }
+
+    function showClientUploadStats(total, valid, duplicate, ignored) {
+      document.getElementById('clientTotalRecords').textContent = total;
+      document.getElementById('clientValidRecords').textContent = valid;
+      document.getElementById('clientDuplicateRecords').textContent = duplicate;
+      document.getElementById('clientIgnoredRecords').textContent = ignored;
+      
+      document.getElementById('clientUploadStats').style.display = 'block';
+    }
+
+    function processClientFile() {
+      if (clientFileData.length === 0) {
+        alert('No hay datos para procesar.');
+        return;
+      }
+      
+      const prospects = getProspectsStorage();
+      let imported = 0;
+      let duplicates = 0;
+      let ignored = 0;
+      
+      clientFileData.forEach(row => {
+        const existingProspect = prospects.find(p => p.telefono === row.Telefono);
+        if (existingProspect) {
+          duplicates++;
+          return;
+        }
+        
+        if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
+          ignored++;
+          return;
+        }
+        
+        const newProspect = {
+          id: generateProspectId(),
+          nombre: row.NombreApellido,
+          telefono: row.Telefono,
+          producto: row.Producto,
+          estado: row.Estado,
+          etiquetas: row.Etiqueta ? [row.Etiqueta] : [],
+          proximoContacto: row.ProximoContacto || '',
+          observaciones: [],
+          fechaCreacion: new Date().toISOString(),
+          fechaActualizacion: new Date().toISOString()
+        };
+        
+        if (row.ObservacionInicial) {
+          newProspect.observaciones.push({
+            fecha: new Date().toISOString(),
+            texto: row.ObservacionInicial
+          });
+        }
+        
+        prospects.push(newProspect);
+        imported++;
+      });
+      
+      setProspectsStorage(prospects);
+      
+      let message = `✅ Importación completada:\n\n`;
+      message += `• Registros en archivo: ${clientFileData.length}\n`;
+      message += `• Nuevos prospectos: ${imported}\n`;
+      message += `• Duplicados omitidos: ${duplicates}\n`;
+      message += `• Registros ignorados: ${ignored}`;
+      
+      alert(message);
+      hideModal('importClientModal');
+      loadProspects();
+      updateProspectStats();
+      showToast(`📥 ${imported} prospectos importados`);
+    }
+
+    function exportProspects() {
+      const prospects = getProspectsStorage();
+      
+      if (prospects.length === 0) {
+        alert('No hay prospectos para exportar.');
+        return;
+      }
+      
+      let csv = 'NombreApellido,Telefono,Producto,Estado,Etiquetas,ProximoContacto,Observaciones,FechaCreacion\n';
+      
+      prospects.forEach(p => {
+        const etiquetas = p.etiquetas ? p.etiquetas.join(';') : '';
+        const observaciones = p.observaciones ? p.observaciones.map(o => 
+          `[${new Date(o.fecha).toLocaleString('es-CL')}] ${o.texto}`
+        ).join(' | ') : '';
+        
+        csv += `"${p.nombre}","${p.telefono}","${p.producto}","${p.estado}","${etiquetas}","${p.proximoContacto || ''}","${observaciones}","${new Date(p.fechaCreacion).toLocaleString('es-CL')}"\n`;
+      });
       
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      link.download = `prospectos_${new Date().toISOString().split('T')[0]}.csv`;
       link.click();
       
-      hideModal('exportModal');
-      showToast(`✓ Exportado: ${filename}`);
+      showToast(`📤 ${prospects.length} prospectos exportados`);
     }
 
     // ============================================
@@ -3443,17 +3688,15 @@
           permanentSales.push(sale);
           setStorage('ventas_permanentes', permanentSales);
           
-          const currentCycle = getCurrentCycle();
-          if (getCycleFromDate(dateInput) === currentCycle) {
-            const cycleSales = getCurrentCycleSales();
-          }
-          
           const today = getCurrentDate();
           if (dateInput === today) {
             const salesDay = getStorage('ventas_dia');
             salesDay.push(sale);
             setStorage('ventas_dia', salesDay);
           }
+          
+          // Recalcular ciclos
+          recalculateAllCycles();
           
           hideModal('modifyModal');
           refreshUI();
@@ -3462,238 +3705,6 @@
           alert(e.message);
         }
       }
-    }
-
-    // ============================================
-    // FUNCIONES DE IMPORTACIÓN CLIENTES
-    // ============================================
-
-    function showImportClientModal() {
-      showModal('importClientModal');
-      resetClientImportForm();
-    }
-
-    function resetClientImportForm() {
-      document.getElementById('clientFile').value = '';
-      document.getElementById('clientFileName').textContent = 'No se ha seleccionado ningún archivo';
-      document.getElementById('clientFilePreview').style.display = 'none';
-      document.getElementById('clientUploadStats').style.display = 'none';
-      document.getElementById('processClientBtn').disabled = true;
-      clientFileData = [];
-      clientFileHeaders = [];
-    }
-
-    function handleClientFileSelect(event) {
-      const file = event.target.files[0];
-      if (!file) {
-        resetClientImportForm();
-        return;
-      }
-      
-      clientFileData = [];
-      document.getElementById('clientFileName').textContent = `📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
-      
-      const reader = new FileReader();
-      
-      if (file.name.endsWith('.csv')) {
-        reader.onload = function(e) {
-          try {
-            parseCSVData(e.target.result);
-          } catch (error) {
-            alert('Error al leer el archivo CSV: ' + error.message);
-            resetClientImportForm();
-          }
-        };
-        reader.readAsText(file, 'UTF-8');
-      } else {
-        alert('Formato de archivo no soportado. Use CSV.');
-        resetClientImportForm();
-        return;
-      }
-    }
-
-    function parseCSVData(content) {
-      const lines = content.split('\n').filter(line => line.trim() !== '');
-      
-      if (lines.length === 0) {
-        alert('El archivo CSV está vacío.');
-        resetClientImportForm();
-        return;
-      }
-      
-      const headers = lines[0].split(',').map(h => h.trim());
-      clientFileHeaders = headers;
-      
-      const requiredHeaders = ['NombreApellido', 'Telefono', 'Producto', 'Estado'];
-      const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-      
-      if (missingHeaders.length > 0) {
-        alert(`Faltan los siguientes encabezados obligatorios: ${missingHeaders.join(', ')}`);
-        resetClientImportForm();
-        return;
-      }
-      
-      const data = [];
-      let validRows = 0;
-      let ignoredRows = 0;
-      
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        const cells = line.split(',').map(c => c.trim());
-        const row = {};
-        
-        headers.forEach((header, index) => {
-          row[header] = cells[index] || '';
-        });
-        
-        if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
-          ignoredRows++;
-          continue;
-        }
-        
-        const validStatuses = ['Falta contactar', 'Contactado por WhatsApp', 'Contactado por llamada', 'Contactado por WhatsApp y Llamada'];
-        if (!validStatuses.includes(row.Estado)) {
-          ignoredRows++;
-          continue;
-        }
-        
-        data.push(row);
-        validRows++;
-      }
-      
-      clientFileData = data;
-      
-      showClientPreview(data.slice(0, 10));
-      
-      const existingProspects = getProspectsStorage();
-      const duplicateRows = data.filter(row => 
-        existingProspects.some(p => p.telefono === row.Telefono)
-      ).length;
-      
-      showClientUploadStats(data.length, validRows, duplicateRows, ignoredRows);
-      document.getElementById('processClientBtn').disabled = false;
-    }
-
-    function showClientPreview(data) {
-      const previewBody = document.getElementById('clientPreviewBody');
-      previewBody.innerHTML = '';
-      
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.NombreApellido || ''}</td>
-          <td>${row.Telefono || ''}</td>
-          <td>${row.Producto || ''}</td>
-          <td>${row.Estado || ''}</td>
-          <td>${row.ObservacionInicial || ''}</td>
-          <td>${row.ProximoContacto || ''}</td>
-          <td>${row.Etiqueta || ''}</td>
-        `;
-        previewBody.appendChild(tr);
-      });
-      
-      document.getElementById('clientFilePreview').style.display = 'block';
-    }
-
-    function showClientUploadStats(total, valid, duplicate, ignored) {
-      document.getElementById('clientTotalRecords').textContent = total;
-      document.getElementById('clientValidRecords').textContent = valid;
-      document.getElementById('clientDuplicateRecords').textContent = duplicate;
-      document.getElementById('clientIgnoredRecords').textContent = ignored;
-      
-      document.getElementById('clientUploadStats').style.display = 'block';
-    }
-
-    function processClientFile() {
-      if (clientFileData.length === 0) {
-        alert('No hay datos para procesar.');
-        return;
-      }
-      
-      const prospects = getProspectsStorage();
-      let imported = 0;
-      let duplicates = 0;
-      let ignored = 0;
-      
-      clientFileData.forEach(row => {
-        const existingProspect = prospects.find(p => p.telefono === row.Telefono);
-        if (existingProspect) {
-          duplicates++;
-          return;
-        }
-        
-        if (!row.NombreApellido || !row.Telefono || !row.Producto || !row.Estado) {
-          ignored++;
-          return;
-        }
-        
-        const newProspect = {
-          id: generateProspectId(),
-          nombre: row.NombreApellido,
-          telefono: row.Telefono,
-          producto: row.Producto,
-          estado: row.Estado,
-          etiquetas: row.Etiqueta ? [row.Etiqueta] : [],
-          proximoContacto: row.ProximoContacto || '',
-          observaciones: [],
-          fechaCreacion: new Date().toISOString(),
-          fechaActualizacion: new Date().toISOString()
-        };
-        
-        if (row.ObservacionInicial) {
-          newProspect.observaciones.push({
-            fecha: new Date().toISOString(),
-            texto: row.ObservacionInicial
-          });
-        }
-        
-        prospects.push(newProspect);
-        imported++;
-      });
-      
-      setProspectsStorage(prospects);
-      
-      let message = `✅ Importación completada:\n\n`;
-      message += `• Registros en archivo: ${clientFileData.length}\n`;
-      message += `• Nuevos prospectos: ${imported}\n`;
-      message += `• Duplicados omitidos: ${duplicates}\n`;
-      message += `• Registros ignorados: ${ignored}`;
-      
-      alert(message);
-      hideModal('importClientModal');
-      loadProspects();
-      updateProspectStats();
-      showToast(`📥 ${imported} prospectos importados`);
-    }
-
-    function exportProspects() {
-      const prospects = getProspectsStorage();
-      
-      if (prospects.length === 0) {
-        alert('No hay prospectos para exportar.');
-        return;
-      }
-      
-      let csv = 'NombreApellido,Telefono,Producto,Estado,Etiquetas,ProximoContacto,Observaciones,FechaCreacion\n';
-      
-      prospects.forEach(p => {
-        const etiquetas = p.etiquetas ? p.etiquetas.join(';') : '';
-        const observaciones = p.observaciones ? p.observaciones.map(o => 
-          `[${new Date(o.fecha).toLocaleString('es-CL')}] ${o.texto}`
-        ).join(' | ') : '';
-        
-        csv += `"${p.nombre}","${p.telefono}","${p.producto}","${p.estado}","${etiquetas}","${p.proximoContacto || ''}","${observaciones}","${new Date(p.fechaCreacion).toLocaleString('es-CL')}"\n`;
-      });
-      
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `prospectos_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-      
-      showToast(`📤 ${prospects.length} prospectos exportados`);
     }
 
     // ============================================
@@ -3796,7 +3807,6 @@
     // ============================================
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar sistema de navegación
       initializeNavigation();
       
       const saleDateInput = document.getElementById('saleDate');
@@ -3839,7 +3849,6 @@
       
       actualizarNombreVendedor();
       
-      // Configurar evento de tecla Escape para simular botón atrás
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' || e.key === 'Backspace') {
           e.preventDefault();
@@ -3882,7 +3891,8 @@
         'processClientFile','exportProspects','guardarNombreVendedor','openWhatsApp','callProspect','confirmCloseDay','confirmCloseCycle',
         'confirmReset','confirmExport','confirmModify','saveProspectChanges','confirmDeleteProspect','showProspectDetail','filterProspects',
         'resetFilters','handleFileSelect','handleClientFileSelect','processCSVFile','processClientFile','hideModal','showModal',
-        'showUninstallModal','checkUninstallConfirmation','performCompleteUninstall','handleBackButton','goBackInApp'
+        'showUninstallModal','checkUninstallConfirmation','performCompleteUninstall','handleBackButton','goBackInApp',
+        'showManageCycleHistoryModal','addManualCycleClose','deleteCycleClose','recalculateAllCycles'
       ];
       apiNames.forEach(name => {
         try {
