@@ -1630,23 +1630,47 @@
     }
 
     /**
-     * Obtiene las ventas del ciclo anterior (hasta el último cierre inclusive)
+     * Obtiene las ventas del ciclo anterior (penúltimo ciclo cerrado)
      */
     function getPreviousCycleSales() {
-      const lastClose = localStorage.getItem('ultimo_cierre_ciclo');
+      const cycleHistory = getStorage('historial_ciclos') || [];
       const permanentSales = getStorage('ventas_permanentes');
       
-      if (!lastClose) {
-        return []; // No hay ciclo anterior
+      // Necesitamos al menos 2 ciclos cerrados para tener un ciclo anterior
+      if (cycleHistory.length < 2) {
+        return [];
       }
       
-      const lastCloseDate = new Date(lastClose);
-      lastCloseDate.setHours(23, 59, 59, 999);
+      // Ordenar ciclos por fecha (más reciente primero)
+      const sortedHistory = cycleHistory.sort((a, b) => 
+        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
+      );
       
-      // Ventas hasta el día de cierre inclusive
+      // El ciclo anterior es el SEGUNDO más reciente
+      const previousCycle = sortedHistory[1];
+      const currentCycle = sortedHistory[0];
+      
+      if (!previousCycle || !currentCycle) {
+        return [];
+      }
+      
+      // Para el primer ciclo, no hay fecha de inicio previa
+      let startDate = new Date('2000-01-01');
+      
+      // Buscar si hay un ciclo anterior al que estamos analizando
+      if (sortedHistory.length >= 3) {
+        const cycleBeforePrevious = sortedHistory[2];
+        startDate = new Date(cycleBeforePrevious.fecha_cierre);
+        startDate.setHours(23, 59, 59, 999);
+      }
+      
+      const endDate = new Date(previousCycle.fecha_cierre);
+      endDate.setHours(23, 59, 59, 999);
+      
+      // Filtrar ventas entre el inicio y el fin del ciclo anterior
       return permanentSales.filter(sale => {
         const saleDate = new Date(sale.date_iso);
-        return saleDate <= lastCloseDate;
+        return saleDate > startDate && saleDate <= endDate;
       });
     }
 
@@ -1667,6 +1691,25 @@
       
       // Devolver el último ciclo cerrado
       return sortedHistory[0];
+    }
+
+    /**
+     * Obtiene el resumen del ciclo anterior al último cerrado
+     */
+    function getPreviousCycleSummary() {
+      const cycleHistory = getStorage('historial_ciclos') || [];
+      
+      if (cycleHistory.length < 2) {
+        return null;
+      }
+      
+      // Ordenar por fecha de cierre (más reciente primero)
+      const sortedHistory = cycleHistory.sort((a, b) => 
+        new Date(b.fecha_cierre) - new Date(a.fecha_cierre)
+      );
+      
+      // Devolver el penúltimo ciclo cerrado
+      return sortedHistory[1];
     }
 
     // ============================================
@@ -2013,15 +2056,23 @@
         return;
       }
       
-      // Guardar fecha de cierre
+      // Guardar fecha de cierre anterior para referencia
+      const previousClose = localStorage.getItem('ultimo_cierre_ciclo') || '2000-01-01';
+      
+      // Guardar nueva fecha de cierre
       localStorage.setItem('ultimo_cierre_ciclo', cycleDate);
       
-      // Obtener ventas del ciclo que se está cerrando (hasta la fecha de cierre)
-      const cycleSales = getCurrentCycleSales().filter(sale => {
+      // Obtener ventas del ciclo que se está cerrando
+      const permanentSales = getStorage('ventas_permanentes');
+      const lastCloseDate = new Date(previousClose);
+      lastCloseDate.setHours(23, 59, 59, 999);
+      
+      const cycleCloseDate = new Date(cycleDate);
+      cycleCloseDate.setHours(23, 59, 59, 999);
+      
+      const cycleSales = permanentSales.filter(sale => {
         const saleDate = new Date(sale.date_iso);
-        const closeDate = new Date(cycleDate);
-        closeDate.setHours(23, 59, 59, 999);
-        return saleDate <= closeDate;
+        return saleDate > lastCloseDate && saleDate <= cycleCloseDate;
       });
       
       // Guardar historial del ciclo
@@ -2032,11 +2083,12 @@
       
       cycleHistory.push({
         fecha_cierre: cycleDate,
-        ciclo: getCurrentCycle(),
+        ciclo: `C${cycleHistory.length + 1}`,
         ventas_count: cycleSales.length,
         total_with_vat: totalWithVat,
         total_without_vat: totalWithoutVat,
-        comision_total: totalCommission
+        comision_total: totalCommission,
+        fecha_inicio: previousClose
       });
       
       setStorage('historial_ciclos', cycleHistory);
@@ -2049,7 +2101,7 @@
       
       hideModal('closeCycleModal');
       refreshUI();
-      showToast('✓ Ciclo cerrado correctamente');
+      showToast(`✓ Ciclo cerrado correctamente - ${cycleSales.length} ventas`);
     }
 
     function closeDay() {
@@ -2406,18 +2458,15 @@
     }
 
     // ============================================
-    // FUNCIONES DE KPI Y ANÁLISIS
+    // FUNCIONES DE KPI Y ANÁLISIS (CORREGIDAS)
     // ============================================
 
     function calculateAndDisplayKPIs() {
       const permanentSales = getStorage('ventas_permanentes');
       const today = getCurrentDate();
       
-      const startOfWeek = getStartOfWeek();
-      
       const daySales = permanentSales.filter(s => s.date_iso === today);
       const currentCycleSales = getCurrentCycleSales();
-      const previousCycleSales = getPreviousCycleSales();
       
       // Ventas del día
       const dayTotal = Math.round(daySales.reduce((sum, s) => sum + s.net_without_vat, 0));
@@ -2431,11 +2480,19 @@
       const currentCycleAverage = currentCycleCount > 0 ? Math.round(currentCycleTotal / currentCycleCount) : 0;
       const currentCycleCommission = Math.round(currentCycleSales.reduce((sum, s) => sum + s.commission, 0));
       
-      // CICLO ANTERIOR CERRADO
-      const previousCycleTotal = Math.round(previousCycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
-      const previousCycleCount = previousCycleSales.length;
-      const previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
-      const previousCycleCommission = Math.round(previousCycleSales.reduce((sum, s) => sum + s.commission, 0));
+      // CICLO ANTERIOR CERRADO - USAR HISTORIAL
+      const previousCycleSummary = getPreviousCycleSummary();
+      let previousCycleTotal = 0;
+      let previousCycleCount = 0;
+      let previousCycleAverage = 0;
+      let previousCycleCommission = 0;
+      
+      if (previousCycleSummary) {
+        previousCycleTotal = previousCycleSummary.total_without_vat || 0;
+        previousCycleCount = previousCycleSummary.ventas_count || 0;
+        previousCycleAverage = previousCycleCount > 0 ? Math.round(previousCycleTotal / previousCycleCount) : 0;
+        previousCycleCommission = previousCycleSummary.comision_total || 0;
+      }
       
       // Actualizar KPI del día
       document.getElementById('kpiDayTotal').textContent = formatCLP(dayTotal);
@@ -2454,12 +2511,6 @@
       document.getElementById('kpiPreviousCycleCount').textContent = previousCycleCount;
       document.getElementById('kpiPreviousCycleAverage').textContent = formatCLP(previousCycleAverage);
       document.getElementById('kpiPreviousCycleCommission').textContent = formatCLP(previousCycleCommission);
-      
-      // Mostrar información adicional sobre el ciclo anterior
-      const lastCloseDate = localStorage.getItem('ultimo_cierre_ciclo');
-      if (lastCloseDate && previousCycleCount > 0) {
-        console.log(`Ciclo anterior cerrado el: ${lastCloseDate}`);
-      }
       
       // Cálculo comparativo
       const totalDifference = currentCycleTotal - previousCycleTotal;
@@ -2487,25 +2538,6 @@
           element.style.color = '#dc2626'; // Rojo para negativo
         }
       });
-    }
-
-    function getStartOfWeek() {
-      const now = new Date();
-      const day = now.getDay();
-      const diff = day === 0 ? 6 : day - 1;
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - diff);
-      startOfWeek.setHours(0, 0, 0, 0);
-      return startOfWeek.toISOString().split('T')[0];
-    }
-
-    function isDateInWeek(dateString, startOfWeek) {
-      const date = new Date(dateString);
-      const start = new Date(startOfWeek);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      
-      return date >= start && date <= end;
     }
 
     // ============================================
@@ -3152,9 +3184,9 @@
       
       let csv = '';
       if (exportType === 'cycleHistory') {
-        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total\n';
+        csv = 'Fecha Cierre,Ciclo,Cantidad Ventas,Total con IVA,Total sin IVA,Comisión Total,Fecha Inicio\n';
         data.forEach(c => {
-          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total}\n`;
+          csv += `${c.fecha_cierre},${c.ciclo},${c.ventas_count},${c.total_with_vat},${c.total_without_vat},${c.comision_total},${c.fecha_inicio || 'N/A'}\n`;
         });
       } else {
         csv = 'Fecha/Hora,Monto con IVA,Neto sin IVA,Comisión,Fecha,Mes,Ciclo\n';
@@ -3404,7 +3436,7 @@
             timestamp: selectedDateTime.toISOString(),
             date_iso: dateInput,
             month_id: dateInput.substring(0, 7),
-            cycle_id: getCycleFromDate(dateInput) // Usa lógica corregida
+            cycle_id: getCycleFromDate(dateInput)
           };
           
           const permanentSales = getStorage('ventas_permanentes');
@@ -3414,7 +3446,6 @@
           const currentCycle = getCurrentCycle();
           if (getCycleFromDate(dateInput) === currentCycle) {
             const cycleSales = getCurrentCycleSales();
-            // No necesitamos guardar en ventas_ciclo porque se calcula dinámicamente
           }
           
           const today = getCurrentDate();
