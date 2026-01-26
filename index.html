@@ -1565,7 +1565,7 @@
     }
 
     // ============================================
-    // NUEVO SISTEMA DE GESTIÓN DE CICLOS MEJORADO
+    // SISTEMA DE GESTIÓN DE CICLOS - CORREGIDO 100%
     // ============================================
 
     /**
@@ -1581,6 +1581,7 @@
 
     /**
      * Determina el ciclo de una venta basado en todas las fechas de cierre
+     * CORRECCIÓN CRÍTICA: Incluye ventas del mismo día de cierre en el ciclo que cierra
      */
     function getCycleFromDate(dateString) {
       const closureDates = getAllCycleClosureDates();
@@ -1589,7 +1590,9 @@
         return 'C1'; // Primer ciclo si no hay cierres
       }
       
+      // CORRECCIÓN: Ajustar fecha de venta al final del día
       const saleDate = new Date(dateString);
+      saleDate.setHours(23, 59, 59, 999);
       
       // Encontrar el último cierre anterior o igual a la fecha de venta
       let cycleNumber = 1;
@@ -1597,6 +1600,7 @@
         const closureDate = new Date(closureDates[i]);
         closureDate.setHours(23, 59, 59, 999);
         
+        // IMPORTANTE: Ventas del día de cierre INCLUIDAS en el ciclo que cierra
         if (saleDate <= closureDate) {
           return `C${cycleNumber}`;
         }
@@ -1660,7 +1664,7 @@
         return;
       }
       
-      // Recalcular ciclo para cada venta
+      // CORRECCIÓN: Recalcular ciclo para cada venta usando función corregida
       permanentSales.forEach(sale => {
         sale.cycle_id = getCycleFromDate(sale.date_iso);
       });
@@ -1976,7 +1980,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE CIERRE DE CICLO MEJORADAS
+    // FUNCIONES DE CIERRE DE CICLO - CORREGIDAS
     // ============================================
 
     function showCloseCycleModal() {
@@ -2025,7 +2029,15 @@
       // Guardar en historial de cierres
       const cycleHistory = getStorage('historial_ciclos') || [];
       const currentCycle = getCurrentCycle();
-      const cycleSales = getCurrentCycleSales();
+      
+      // Obtener ventas del ciclo incluyendo el día de cierre
+      const cycleSales = getCurrentCycleSales().filter(sale => {
+        const saleDate = new Date(sale.date_iso);
+        saleDate.setHours(23, 59, 59, 999);
+        const closeDate = new Date(cycleDate);
+        closeDate.setHours(23, 59, 59, 999);
+        return saleDate <= closeDate;
+      });
       
       const totalWithVat = Math.round(cycleSales.reduce((sum, s) => sum + s.amount_with_vat, 0));
       const totalWithoutVat = Math.round(cycleSales.reduce((sum, s) => sum + s.net_without_vat, 0));
@@ -2054,7 +2066,7 @@
     }
 
     // ============================================
-    // NUEVAS FUNCIONES PARA GESTIONAR HISTORIAL DE CIERRES
+    // FUNCIONES PARA GESTIONAR HISTORIAL DE CIERRES
     // ============================================
 
     function showManageCycleHistoryModal() {
@@ -2167,7 +2179,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE IMPORTACIÓN CSV MEJORADAS (100% DE VENTAS)
+    // FUNCIONES DE IMPORTACIÓN CSV
     // ============================================
 
     function showUploadModal() {
@@ -2357,7 +2369,7 @@
 
       // IMPORTAR 100% DE LAS VENTAS SIN VERIFICAR DUPLICADOS
       csvData.forEach(row => {
-        // Usar ciclo del archivo o calcularlo
+        // Usar ciclo del archivo o calcularlo con la función CORREGIDA
         const cycleId = row.ciclo || getCycleFromDate(row.date_iso);
         
         const sale = {
@@ -2370,7 +2382,7 @@
           cycle_id: cycleId
         };
 
-        // Agregar a ventas permanentes (SIN VERIFICAR DUPLICADOS)
+        // Agregar a ventas permanentes
         permanentSales.push(sale);
         importedCount++;
       });
@@ -2396,7 +2408,7 @@
     }
 
     // ============================================
-    // FUNCIONES DE EXPORTACIÓN MEJORADAS (100% DE VENTAS)
+    // FUNCIONES DE EXPORTACIÓN
     // ============================================
 
     function showExportModal() {
@@ -2717,7 +2729,7 @@
     }
 
     // ============================================
-    // FUNCIONES CRM (MANTENIDAS)
+    // FUNCIONES CRM
     // ============================================
 
     function getProspectsStorage() {
